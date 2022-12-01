@@ -210,23 +210,33 @@ app.layout = html.Div(
 
                     children = [
 
-                        #html.Div(
-                            #children = [
+                        html.Div(
+                            children = [
                                 dcc.Graph(
                                     id = "hist_porcentaje_heart_disease_categoricas",  style={'display': 'inline-block'}
                                 ),
 
-                            #], className="six columns"
+                            ], style={
+                                "display": "inline-block",
+                                "margin-left":"0px",
+                                "margin-right":"0px",
+                                "width":"650px"
+                                }
 
-                        #),
+                        ),
 
-                        ##html.Div(
-                            #children = [
+                        html.Div(
+                            children = [
                                 dcc.Graph(
                                     id = "hist_total_heart_disease_categoricas", style={'display': 'inline-block'}
                                 )
-                            #], className="six columns"
-                        #)
+                            ], style={
+                                "display": "inline-block",
+                                "margin-left":"0px",
+                                "margin-right":"50px",
+                                "width":"100px"
+                                }
+                        )
                     ],style = { "display": "inline-block"},className="row"
                 ),
             
@@ -285,14 +295,14 @@ app.layout = html.Div(
                 dcc.Graph(
                             id = "comparacion_boxplot_heart_disease_segun_var_cat_y_num",
                             style = {
-                                "display": "none"
+                                "display": "none",
                             }
                         ),
                 
                 dcc.Graph(
                             id = "comparacion_violinplot_heart_disease_segun_var_cat_y_num",
                             style = {
-                                "display": "none"
+                                "display": "none",
                             }
                         )
             ]
@@ -489,10 +499,10 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
         trace = go.Bar(x = df[dropdown_porcentaje_heart_disease_variables_categoricas].unique(),
                     y = y,
                     name = "HeartDisease",
-                    marker_color = "firebrick",
+                    marker_color = "mediumseagreen",  # firebrick
                     text= ["{0}%".format(round(value*100,1)) for value in y],
                     textposition="auto",
-                    opacity=0.9,
+                    opacity=0.8,
                     textangle=0,
                     textfont_size = 20,
                     textfont_color= "white",
@@ -541,12 +551,14 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
         data = [
             go.Histogram(
                 x = df[df["HeartDisease"] == 'Yes'][dropdown_porcentaje_heart_disease_variables_categoricas],
-                marker_color = "darkorange",
+                marker_color = "blue",  # darkorange
+                opacity = 0.75,
                 name = "Heart Disease"
             ),
             go.Histogram(
                 x = df[df["HeartDisease"] == 'No'][dropdown_porcentaje_heart_disease_variables_categoricas],
-                marker_color = "mediumseagreen",
+                marker_color = "red",  # mediumseagreen
+                opacity = 0.75,
                 name = "No Heart Disease"
             )
         ]
@@ -604,10 +616,7 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
         fig = px.box(df, y=dropdown_cat_comparacion_categorica_numerica, x=dropdown_num_comparacion_categorica_numerica, color="HeartDisease",title="Heart Disease distribution by" + diccionario_variables_numericas[dropdown_num_comparacion_categorica_numerica] + "and" + diccionario_columnas_categoricas[dropdown_cat_comparacion_categorica_numerica])
         fig.update_traces(quartilemethod="exclusive") 
 
-  
-    
-        
-        return (fig,{"display":"block"})
+        return (fig,{"display":"block", "height":"750px"})
     else:
         return (go.Figure(data = [], layout = {}), {"display": "none"})
 
@@ -658,13 +667,13 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
                             y=df[dropdown_num_comparacion_categorica_numerica][ df['HeartDisease'] == 'Yes' ],
                             legendgroup='Yes', scalegroup='Yes', name='Yes',
                             side='negative',
-                            line_color='blue')
+                            line_color='red')
                 )
         fig.add_trace(go.Violin(x=df[dropdown_cat_comparacion_categorica_numerica][ df['HeartDisease'] == 'No' ],
                             y=df[dropdown_num_comparacion_categorica_numerica][ df['HeartDisease'] == 'No' ],
                             legendgroup='No', scalegroup='No', name='No',
                             side='positive',
-                            line_color='orange')
+                            line_color='blue')
                 )
         fig.update_traces(meanline_visible=True)
         fig.update_layout(violingap=0, violinmode='overlay')
