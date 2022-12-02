@@ -11,12 +11,67 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import logging
 from plotly.subplots import make_subplots
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import OrdinalEncoder
+import dash_daq as daq
 
 
 # Para este Dash, vamos a seleccionar un fichero de datos y realizar un dashboard descriptivo
 # sobre un conjunto de datos
 
 df = pd.read_csv('../Datos/heart_2020_cleaned.csv')
+
+# 6.A FUNCION RADAR CHART
+def radar_chart():
+    scaler = MinMaxScaler()
+    numerical = df.loc[:, ["BMI","PhysicalHealth","MentalHealth", "SleepTime", "HeartDisease","AgeCategory", "Smoking", "KidneyDisease", "Stroke", "SkinCancer", "PhysicalActivity"]]
+    encoder = OrdinalEncoder()
+    result = encoder.fit_transform(numerical.drop(['HeartDisease'], axis=1))
+    numerical = pd.DataFrame(result, columns = numerical.drop(['HeartDisease'], axis=1).columns)
+    scaler.fit(numerical)
+    numerical_scaled = scaler.transform(numerical)
+    numerical_scaled = pd.DataFrame(numerical_scaled, columns = numerical.columns)
+    numerical_scaled["HeartDisease"] = df["HeartDisease"]
+    numerical_yes_HeartDisease = numerical_scaled[numerical_scaled['HeartDisease'] == 'Yes' ] #rojo
+    numerical_no_HeartDisease = numerical_scaled[numerical_scaled['HeartDisease'] == 'No' ]
+    categories = ['BMI','PhysicalHealth','MentalHealth',
+            'AgeCategory', 'Smoking', 'KidneyDisease', 'Stroke', 'SkinCancer','PhysicalActivity']
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatterpolar(
+          r=[numerical_no_HeartDisease['BMI'].mean(),numerical_no_HeartDisease['PhysicalHealth'].mean(), 
+             numerical_no_HeartDisease['MentalHealth'].mean(), 
+             numerical_no_HeartDisease['AgeCategory'].mean(), numerical_no_HeartDisease['Smoking'].mean(),
+            numerical_no_HeartDisease['KidneyDisease'].mean(), numerical_no_HeartDisease['Stroke'].mean(),
+            numerical_no_HeartDisease['SkinCancer'].mean(), numerical_no_HeartDisease['PhysicalActivity'].mean()],
+          theta=categories,
+          fill='toself',
+          name='No Heart Disease',marker=dict(color="blue")
+    ))
+    fig.add_trace(go.Scatterpolar(
+          r=[numerical_yes_HeartDisease['BMI'].mean(),numerical_yes_HeartDisease['PhysicalHealth'].mean(), 
+             numerical_yes_HeartDisease['MentalHealth'].mean(),
+            numerical_yes_HeartDisease['AgeCategory'].mean(), numerical_yes_HeartDisease['Smoking'].mean(),
+            numerical_yes_HeartDisease['KidneyDisease'].mean(), numerical_yes_HeartDisease['Stroke'].mean(),
+            numerical_yes_HeartDisease['SkinCancer'].mean(), numerical_yes_HeartDisease['PhysicalActivity'].mean()],
+          theta=categories, 
+          fill='toself',
+          name='Yes Heart Disease',marker=dict(color="red")
+    ))
+
+    fig.update_layout(
+      polar=dict(
+        radialaxis=dict(
+          visible=True,
+          range=[0, 1]
+        )),
+      showlegend=True
+    )
+
+    return fig
+
+
 
 
 # Crear opciones para las variables categóricas
@@ -37,6 +92,27 @@ for col in cols_numericas:
     dropdown_numericas.append({'value': col, 'label': col})
 
 app = dash.Dash()
+
+dropdown_modelo_yes_no = [{'value': "Yes", 'label':"Yes"}, {'value': "No", 'label':"No"}]
+dropdpown_modelo_sex = [{'value': "Male", 'label':"Male"}, {'value': "Female", 'label':"Female"}]
+dropdpown_modelo_agecategory = [{'value': "18-24", 'label':"18-24"},
+    {'value': "25-29", 'label':"25-29"}, {'value': "30-34", 'label':"30-34"},
+    {'value': "35-39", 'label':"35-39"}, {'value': "40-44", 'label':"40-44"}, {'value': "45-49", 'label':"45-49"},
+    {'value': "50-54", 'label':"50-54"}, {'value': "55-59", 'label':"55-59"},
+    {'value': "60-64", 'label':"60-64"}, {'value': "65-69", 'label':"65-69"},
+    {'value': "70-74", 'label':"70-74"}, {'value': "75-79", 'label':"75-79"},
+    {'value': "80 or older", 'label':"80 or older"}]
+
+dropdown_modelo_race = [{'value': "White", 'label':"White"}, {'value': "Hispanic", 'label':"Hispanic"},
+    {'value': "Black", 'label':"Black"}, {'value': "Asian", 'label':"Asian"}, 
+    {'value': "American Indian/Alaskan Native", 'label':"Native American"}, {'value': "Other", 'label':"Other"}]
+
+dropdown_modelo_diabetic = [{'value': "No", 'label':"No"}, {'value': "No, borderline diabetes", 'label':"No, borderline diabetes"},
+    {'value': "Yes", 'label':"Yes"}, {'value': "Yes (during pregnancy)", 'label':"Yes (during pregnancy)"}]
+
+dropdown_modelo_genhealth = [{'value': "Excellent", 'label':"Excellent"}, {'value': "Very good", 'label':"Very good"},
+    {'value': "Good", 'label':"Good"}, {'value': "Fair", 'label':"Fair"},
+    {'value': "Poor", 'label':"Poor"}]
 
 #app.config.suppress_callback_exceptions = True
 
@@ -354,12 +430,593 @@ app.layout = html.Div(
                                 "display": "none"
                             }
                         )
+                        
 
             ]
+        ),
+        ## 7. Radar chart
+        html.H2(
+            children = [
+                "Radar chart variables"
+            ],
+            id = "radar_chart_variables",
+            style = {
+                "text-align": "center",
+                "margin-bottom": "20px",
+                "height": "50px",
+                "margin-top":"40px",
+                "text-align": "left"
+
+            }
+        ),
+        html.Div(
+            children = [
+                dcc.Graph(
+                    figure=radar_chart(),
+                    id = "titulo_radar_chart",
+                    style = {
+                        "display": "inline-block"
+                    }
+                )
+            ]
+        ),
+
+        ## 7. Modelo
+        html.H2(
+            children = [
+                "Modelo"
+            ],
+            id = "titulo_modelo",
+            style = {
+                "text-align": "center",
+                "margin-bottom": "20px",
+                "height": "50px",
+                "margin-top":"40px",
+                "text-align": "left"
+
+            }
+        ),
+        html.Div( ## SMOKING
+            children = [
+                html.H3( 
+                    children = [
+                        "Smoking?"
+                    ],
+                    id = "titulo_dropdown_modelo_smoking",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_yes_no,
+                            value="No",
+                            id = "dropdown_modelo_smoking",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## ALCOHOL DRINKING
+            children = [
+                html.H3( 
+                    children = [
+                        "Alcohol drinking?"
+                    ],
+                    id = "titulo_dropdown_modelo_alcoholdrinking",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_yes_no,
+                            value="No",
+                            id = "dropdown_modelo_alcoholdrinking",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## STROKE
+            children = [
+                html.H3( 
+                    children = [
+                        "Stroke?"
+                    ],
+                    id = "titulo_dropdown_modelo_stroke",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_yes_no,
+                            value="No",
+                            id = "dropdown_modelo_stroke",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## DiffWalking
+            children = [
+                html.H3( 
+                    children = [
+                        "Difficulty Walking?"
+                    ],
+                    id = "titulo_dropdown_diffwalking",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_yes_no,
+                            value="No",
+                            id = "dropdown_modelo_diffwalking",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## Sex
+            children = [
+                html.H3( 
+                    children = [
+                        "Sex?"
+                    ],
+                    id = "titulo_dropdown_modelo_sex",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdpown_modelo_sex,
+                            value="Male",
+                            id = "dropdown_modelo_sex",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## Age Category
+            children = [
+                html.H3( 
+                    children = [
+                        "Age?"
+                    ],
+                    id = "titulo_dropdown_modelo_age",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdpown_modelo_agecategory,
+                            value="18-24",
+                            id = "dropdown_modelo_agecategory",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## Race
+            children = [
+                html.H3( 
+                    children = [
+                        "Race?"
+                    ],
+                    id = "titulo_dropdown_modelo_race",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_race,
+                            value="White",
+                            id = "dropdown_modelo_race",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## Diabetic
+            children = [
+                html.H3( 
+                    children = [
+                        "Diabetes?"
+                    ],
+                    id = "titulo_dropdown_modelo_diabetic",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_diabetic,
+                            value="No",
+                            id = "dropdown_modelo_diabetic",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## Physical Activity
+            children = [
+                html.H3( 
+                    children = [
+                        "Regular Physical Activity?"
+                    ],
+                    id = "titulo_dropdown_modelo_physicalactivity",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_yes_no,
+                            value="No",
+                            id = "dropdown_modelo_physicalactivity",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## GenHealth
+            children = [
+                html.H3( 
+                    children = [
+                        "Describe your general health"
+                    ],
+                    id = "titulo_dropdown_modelo_genhealth",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_genhealth,
+                            value="Good",
+                            id = "dropdown_modelo_genhealth",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## Asthma
+            children = [
+                html.H3( 
+                    children = [
+                        "Asthma?"
+                    ],
+                    id = "titulo_dropdown_modelo_asthma",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_yes_no,
+                            value="No",
+                            id = "dropdown_modelo_asthma",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## KidneyDisease
+            children = [
+                html.H3( 
+                    children = [
+                        "Kidney Disease?"
+                    ],
+                    id = "titulo_dropdown_modelo_kidneydisease",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_yes_no,
+                            value="No",
+                            id = "dropdown_modelo_kidneydisease",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## Skin Cancer
+            children = [
+                html.H3( 
+                    children = [
+                        "Skin Cancer?"
+                    ],
+                    id = "titulo_dropdown_modelo_skincancer",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Dropdown(
+                            options = dropdown_modelo_yes_no,
+                            value="No",
+                            id = "dropdown_modelo_skincancer",
+                            style = {
+                                "display": "block",
+                                "width": "300px",
+                                "margin-left": "10px"
+                            }
+                        )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## BMI
+            children = [
+                html.H3( 
+                    children = [
+                        "Body Mass Index?"
+                    ],
+                    id = "titulo_dropdown_modelo_bmi",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                daq.NumericInput(
+                    id="numeric_input_bmi",
+                    min=1,
+                    max=120,
+                    value=23
+                )
+
+            ],
+            style={"display": "inline-block", "margin":"1%"}
+        ),
+        html.Div( ## SleepTime
+            children = [
+                html.H3( 
+                    children = [
+                        "Average Sleep Time?"
+                    ],
+                    id = "titulo_dropdown_modelo_sleeptime",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                daq.NumericInput(
+                    id="numeric_input_sleeptime",
+                    min=0,
+                    max=24,
+                    value=8
+                )
+
+            ],
+            style={"display": "inline-block", "margin":"1%", "margin-right": "10%"}
+        ),
+
+        html.Div( ## MentalHealth
+            children = [
+                html.H3( 
+                    children = [
+                        "For how many days during the past 30 days was your mental health not good?"
+                    ],
+                    id = "titulo_dropdown_modelo_mentalhealth",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Slider(id="slider_modelo_mentalhealth", min=0, max=30, step=1, value=2, marks={'1': '1', '2': '2','3':'3','4':'4','5':'5','6':'6',
+                                                                                                    '7': '7', '8': '8','9':'9','10':'10','11':'11','12':'12',
+                                                                                                    '13': '13', '14': '14','15':'15','16':'16','17':'17','18':'18',
+                                                                                                    '19': '19', '20': '20','21':'21','22':'22','23':'23','24':'24',
+                                                                                                    '25': '25', '26': '26','27':'27','28':'28','29':'29','30':'30'})
+
+            ],
+            style={"display": "inline-block", "margin":"1%", "width":"45%"}
+        ),
+        html.Div( ## PhysicalHealth
+            children = [
+                html.H3( 
+                    children = [
+                        "For how many days during the past 30 days was your physical health not good? Including injuries or physical illness"
+                    ],
+                    id = "titulo_dropdown_modelo_physicalhealth",
+                    style = {
+                        "text-align": "center",
+                        "margin-bottom": "20px",
+                        "height": "50px",
+                        "margin-top":"40px",
+                        "text-align": "left"
+
+                    }
+
+                ),
+                dcc.Slider(id="slider_modelo_physicalhealth", min=0, max=30, step=1, value=2, marks={'1': '1', '2': '2','3':'3','4':'4','5':'5','6':'6',
+                                                                                                    '7': '7', '8': '8','9':'9','10':'10','11':'11','12':'12',
+                                                                                                    '13': '13', '14': '14','15':'15','16':'16','17':'17','18':'18',
+                                                                                                    '19': '19', '20': '20','21':'21','22':'22','23':'23','24':'24',
+                                                                                                    '25': '25', '26': '26','27':'27','28':'28','29':'29','30':'30'})
+
+            ],
+            style={"display": "inline-block", "margin":"1%", "width":"45%"}
+        ),
+
+        #BOTON
+        html.Div(
+            children = [
+                html.Button('Realizar Predicción', id='button', 
+                    style={
+                        "display": "inline-block",
+                        "border": "none",
+                        "padding": "1rem 2rem",
+                        "margin": "0",
+                        "text-decoration": 2,
+                        "background": "darkcyan",
+                        "color": "#ffffff",
+                        "font-family":"sans-serif",
+                        "font-size": "1rem",
+                        "cursor": "pointer",
+                        "text-align": "center",
+                        "border-radius":"5px"}
+                )
+            ], style={ "margin":"2%", "padding-left":"38%"}
+        ),
+
+        ## DIV PREDICCION MODELO
+        html.Div(
+            id ="div_prediccion"
         )
         
 
 
+
+    
 
     ], style={
           'margin-right': "5%",
@@ -713,6 +1370,38 @@ def scatter_plot_correlacion_numerica_numerica(dropdown_1_scatter_correlacion_nu
         return (fig,{"display":"block"})
     else:
         return (go.Figure(data = [], layout = {}), {"display": "none"})
+
+
+## CALLBACK BOTON
+@app.callback(
+    Output('div_prediccion', 'children'),
+    Input('button', 'n_clicks'),
+    State('dropdown_modelo_smoking', 'value'),
+    State('dropdown_modelo_alcoholdrinking', 'value'),
+    State('dropdown_modelo_stroke', 'value'),
+    State('dropdown_modelo_diffwalking', 'value'),
+    State('dropdown_modelo_sex', 'value'),
+    State('dropdown_modelo_agecategory', 'value'),
+    State('dropdown_modelo_race', 'value'),
+    State('dropdown_modelo_diabetic', 'value'),
+    State('dropdown_modelo_physicalactivity', 'value'),
+    State('dropdown_modelo_genhealth', 'value'),
+    State('dropdown_modelo_asthma', 'value'),
+    State('dropdown_modelo_kidneydisease', 'value'),
+    State('dropdown_modelo_skincancer', 'value'),
+    State('numeric_input_bmi', 'value'),
+    State('numeric_input_sleeptime', 'value'),
+    State('slider_modelo_mentalhealth', 'value'),
+    State('slider_modelo_physicalhealth', 'value')
+)
+
+def update_div_prediccion(n_clicks,smoking_value, alcohol_value, stroke_value, diffwalking_value, 
+    sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
+    kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value):
+    return 'Smoking: {}, BMI: {}, mentalhealth: {}'.format(smoking_value, bmi_value, mentalhealth_value)
+
+
+
 
 if __name__ == '__main__':
     app.run_server()
