@@ -208,6 +208,16 @@ app.layout = html.Div(
 
             }
         ),
+        # Radio item para elegir distribucion general o comparacion YES/NO Heart Disease en variables numericas
+        dcc.RadioItems(
+                    id="radio_item_dist_var_numerica_selector",
+                    options=[
+                        {'label': '                     General                                   ', 'value': 'General'},
+                        {'label': '                     Comparacion YES/NO', 'value': 'Comparacion YES/NO'}
+                    ],
+                    value='General', style={"margin-top":"25px", "margin-left":"10px"}
+                ),
+                
         html.Div(
             children = [
                 dcc.Dropdown(
@@ -1082,10 +1092,12 @@ def pie_chart_distribucion_categoricas_dropdown(dropdown_categoricas):
     Output("dropdown_histograma_distribucion_numericas", "figure"),
     Output("dropdown_histograma_distribucion_numericas", "style"),
     Input("dropdown_numericas", "value"),
-    Input("slider_histograma_numericas", "value")
+    Input("slider_histograma_numericas", "value"),
+    Input("radio_item_dist_var_numerica_selector", "value")
+
 )
         
-def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histograma_numericas):
+def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histograma_numericas, radio_item_dist_var_numerica_selector):
     
     diccionario_variables_numericas = {
         "BMI":"Body Mass Index",
@@ -1094,7 +1106,7 @@ def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histogr
         "SleepTime":"Sleep Time"
     }
 
-    if dropdown_numericas:
+    if dropdown_numericas and radio_item_dist_var_numerica_selector=='General':
         
         data = [
         go.Histogram(
