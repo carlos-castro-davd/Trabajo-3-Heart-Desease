@@ -1398,7 +1398,7 @@ def scatter_plot_correlacion_numerica_numerica(dropdown_1_scatter_correlacion_nu
 def update_div_prediccion(n_clicks,smoking_value, alcohol_value, stroke_value, diffwalking_value, 
     sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
     kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value):
-    return 'Smoking: {}, BMI: {}, mentalhealth: {}'.format(smoking_value, bmi_value, mentalhealth_value)
+    return 'Smoking: {}, BMI: {}, mentalhealth: {}, Race: {}, Diabetes: {}, GenHealth: {}, Age: {}'.format(smoking_value, bmi_value, mentalhealth_value, race_value, diabetic_value, genhealth_value, age_value)
 
 
 
