@@ -11,6 +11,10 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import logging
 from plotly.subplots import make_subplots
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import OrdinalEncoder
+import dash_daq as daq
+from plotly.graph_objects import Layout
 
 
 # Para este Dash, vamos a seleccionar un fichero de datos y realizar un dashboard descriptivo
@@ -82,58 +86,210 @@ app.layout = html.Div(
         html.Div(
             children=[
 
-                ## 2.1 Distribucion variables categoricas
-
                 html.Div(
-                    children = [
+                    children=[
+                        ## 2.0 Overview
 
-                        html.H2(
-                            children = [
-                                "VARIABLES CATEGÓRICAS: DISTRIBUCIÓN"
+                        html.Div(
+                            children=[
+                                html.H3(
+                                    children = [
+                                        "BASIC OVERVIEW"
+                                    ],
+                                    id = "titulo_overview",
+                                    style = {
+                                        "text-align": "left",
+                                        "margin": "2.5%",
+                                        "margin-bottom": "4%",
+                                        "text-align": "left",
+                                        "font-family": "verdana",
+                                        "font-weight": "600",
+                                        "color": "rgb(67,67,67)"
+                                    }
+                                ),
+
+                                html.P(
+                                    children = [
+                                        html.P(children=["OBSERVATIONS |"],
+                                            style={
+                                                "display":"inline-block",
+                                                "margin":"0px", "padding":"0px"
+                                            }
+                                        ),
+                                        html.P(children=["{}".format(len(df.index))],
+                                            style={
+                                                "display":"inline-block",
+                                                #"color": "rgb(127,127,127)",
+                                                "margin":"0px", "padding":"0px",
+                                                "margin-left": "1%",
+                                                "font-weight": "500",
+                                            }
+                                        )
+                                    ],
+                                    style={
+                                        "text-align": "left",
+                                        "margin": "2.5%",
+                                        "margin-bottom": "2%",
+                                        "text-align": "left",
+                                        "font-family": "verdana",
+                                        "font-weight": "600",
+                                        "color": "rgb(77,77,77)",
+                                        "margin-left" : "4%"
+                                    }
+                                ),
+                                html.P(
+                                    children = [
+                                        html.P(children=["NUMBER OF VARIABLES |"],
+                                            style={
+                                                "display":"inline-block",
+                                                "margin":"0px", "padding":"0px"
+                                            }
+                                        ),
+                                        html.P(children=["{}".format(len(df.columns))],
+                                            style={
+                                                "display":"inline-block",
+                                                #"color": "rgb(127,127,127)",
+                                                "margin":"0px", "padding":"0px",
+                                                "margin-left": "1%",
+                                                "font-weight": "500",
+                                            }
+                                        )
+                                    ],
+                                    style={
+                                        "text-align": "left",
+                                        "margin": "2.5%",
+                                        "margin-bottom": "2%",
+                                        "text-align": "left",
+                                        "font-family": "verdana",
+                                        "font-weight": "600",
+                                        "color": "rgb(77,77,77)",
+                                        "margin-left" : "4%"
+                                    }
+                                ),
+                                html.P(
+                                    children = [
+                                        html.P(children=["HEART DISEASE DISTRIBUTION |"],
+                                            style={
+                                                "display":"inline-block",
+                                                "margin":"0px", "padding":"0px"
+                                            }
+                                        ),
+                                        html.P(
+                                            children=["NO {}%  -  YES {}%".format(
+                                                round(df[df["HeartDisease"] == 'No'].count()[0]/len(df.index)*100,2),
+                                                round(df[df["HeartDisease"] == 'Yes'].count()[0]/len(df.index)*100,2)
+                                            )
+                                        ],
+                                            style={
+                                                "display":"inline-block",
+                                                #"color": "rgb(127,127,127)",
+                                                "margin":"0px", "padding":"0px",
+                                                "margin-left": "1%",
+                                                "font-weight": "500",
+                                            }
+                                        )
+                                    ],
+                                    style={
+                                        "text-align": "left",
+                                        "margin": "2.5%",
+                                        "margin-bottom": "6%",
+                                        "text-align": "left",
+                                        "font-family": "verdana",
+                                        "font-weight": "600",
+                                        "color": "rgb(77,77,77)",
+                                        "margin-left":"4%"
+                                    }
+                                ),
                             ],
-                            id = "distribucion_categoricas",
-                            style = {
-                                "text-align": "left",
-                                "margin": "2.5%",
-                                "margin-bottom": "4%",
-                                "text-align": "left",
-                                "font-family": "verdana",
-                                "font-weight": "600",
-                                "color": "rgb(67,67,67)"
+                            id="div_general_overview",
+                            style={
+                                "background-color":"rgb(255,255,255)",
+                                "border":"1px solid rgb(204,202,202)",
+                                "margin":"1.5%",
+                                "margin-left":"2%",
+                                "margin-right":"0.5%",
+                                "margin-top":"0px",
+                                "display": "inline-block",
+                                "border-radius" : "2px",
+                                "height":"195px",
+                                "width":"95%",
+                                "padding-bottom":"0.4%"
                             }
                         ),
 
+                        ## 2.1 Distribucion variables categoricas
+
                         html.Div(
                             children = [
-                                dcc.Dropdown(
-                                    options = dropdown_categoricas,
-                                    value="Race",
-                                    placeholder = "Selecciona una variable categorica",
-                                    id = "dropdown_categoricas",
+
+                                html.H3(
+                                    children = [
+                                        "VARIABLES CATEGÓRICAS: DISTRIBUCIÓN"
+                                    ],
+                                    id = "distribucion_categoricas",
                                     style = {
-                                        "display": "block",
-                                        "width": "300px",
-                                        "margin-left": "10px"
+                                        "text-align": "left",
+                                        "margin": "2.5%",
+                                        "margin-bottom": "4%",
+                                        "text-align": "left",
+                                        "font-family": "verdana",
+                                        "font-weight": "600",
+                                        "color": "rgb(67,67,67)"
                                     }
                                 ),
-                                dcc.Graph(
-                                    id = "dropdown_piechart_distribucion_categoricas",
-                                    style = {
-                                        "display": "none",
-                                    }
-                                )
-                            ]
-                        ),
 
+                                html.Div(
+                                    children = [
+                                        dcc.Dropdown(
+                                            options = dropdown_categoricas,
+                                            value="Race",
+                                            placeholder = "Selecciona una variable categorica",
+                                            id = "dropdown_categoricas",
+                                            style = {
+                                                "display": "block",
+                                                "width": "300px",
+                                                "margin-left": "10px",
+                                                'font-size' : '85%',
+                                                'font-family':'verdana'
+                                            }
+                                        ),
+                                        dcc.Graph(
+                                            id = "dropdown_piechart_distribucion_categoricas",
+                                            style = {
+                                                "display": "none",
+                                            }
+                                        )
+                                    ]
+                                ),
+
+                            ],
+                            id = "div_distribucion_categoricas",
+                            style = {
+                                "background-color":"rgb(255,255,255)",
+                                "border":"1px solid rgb(204,202,202)",
+                                "margin":"1.5%",
+                                "margin-left":"2%",
+                                "margin-right":"0.5%",
+                                "display": "inline-block",
+                                "border-radius" : "2px",
+                                "width":"95%",
+                                "height":"36.6em"
+                            }
+                        ),
                     ],
-                    id = "div_distribucion_categoricas",
-                    style = {
-                        "background-color":"rgb(255,255,255)",
-                        "border":"1px solid rgb(204,202,202)",
+                    style={
+                        "display":"inline-block",
                         "margin":"1%",
-                        "display": "inline-block",
-                        "width":"50%"
-                    }
+                        "margin-top":"15px",
+                        "padding":"0px",
+                        "margin-left":"2%",
+                        "margin-right":"0px",
+                        "height":"114vh",
+                        "width":"50%",
+                        "padding-bottom": "500em",
+                        "margin-bottom": "-500em",
+                    },
+                    id="div_contenedor_overview_y_distribucion_categoricas"
                 ),
 
 
@@ -142,9 +298,9 @@ app.layout = html.Div(
                 html.Div(
                     children=[
 
-                        html.H2(
+                        html.H3(
                             children = [
-                                "Variables Categóricas: Porcentaje de Heart Disease"
+                                "VARIABLES CATEGÓRICAS: PORCENTAJE DE HEART DISEASE"
                             ],
                             id = "titulo_distribucion_target_en_categoricas",
                             style = {
@@ -168,7 +324,9 @@ app.layout = html.Div(
                                             style = {
                                                 "display": "block",
                                                 "width": "300px",
-                                                "margin-left": "10px"
+                                                "margin-left": "10px",
+                                                'font-size' : '85%',
+                                                'font-family':'verdana'
                                             }
                                         ),
 
@@ -186,7 +344,8 @@ app.layout = html.Div(
                                                 #"display": "inline-block",
                                                 "margin-left":"0px",
                                                 "margin-right":"0px",
-                                                "width":"650px"
+                                                "width":"650px",
+                                                "height":"22em"
                                                 }
 
                                         ),
@@ -201,16 +360,14 @@ app.layout = html.Div(
                                                 #"display": "inline-block",
                                                 "margin-left":"0px",
                                                 "margin-right":"0px",
-                                                "width":"100px"
-                                                }
+                                                "width":"100px",
+                                                "height":"21.5em"
+                                            }
                                         )
 
                                     ],
-                                    #style = { "display": "inline-block"}
                                 ),
-                            
-
-                            ], #style = { "display": "inline-block"} 
+                            ],
                         ),
                         
                     ],
@@ -219,19 +376,25 @@ app.layout = html.Div(
                         "background-color":"rgb(255,255,255)",
                         "border":"1px solid rgb(204,202,202)",
                         "margin":"1%",
+                        "margin-top":"16px",
+                        "margin-left":"0.25%",
                         "margin-right":"0%",
-                        "padding-left":"1%",
+                        "padding-left":"0.5%",
                         "display": "inline-block",
-                        "width":"40%"
+                        "border-radius" : "2px",
+                        "width":"40%",
+                        "height":"50.4em",
                     }
                 ),
             ],
             id="div_contenedor_de_distribucion_categoricas_y_proporcion_target_categorias_por_separado",
             style = {
                 "background-color":"transparent",
-                "margin":"1.5%",
-                "display": "inline",
-                "width":"100%"
+                "margin":"0px",
+                "display": "inline-block",
+                "width":"100%",
+                #"height":"114vh"
+                "height":"820px"
             }
         ),
 
@@ -556,7 +719,7 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
         trace = go.Bar(x = df[dropdown_porcentaje_heart_disease_variables_categoricas].unique(),
                     y = y,
                     name = "HeartDisease",
-                    marker_color = "mediumseagreen",  # firebrick
+                    marker_color = "firebrick",  # firebrick mediumseagreen darkcian
                     text= ["{0}%".format(round(value*100,1)) for value in y],
                     textposition="auto",
                     opacity=0.8,
@@ -572,7 +735,14 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
             yaxis_title = "% of heart disease")
         fig = go.Figure(data = data, layout = layout)
         fig.update_layout(width=500)
-        fig.update_layout(height=400)
+        fig.update_layout(height=350)
+
+        fig.update_layout(
+            font=dict(
+                family="Verdana",
+                size=11,  # Set the font size here
+            )
+        )
 
         return (fig,{"display":"inline-block"})
     else:
@@ -611,22 +781,29 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
         data = [
             go.Histogram(
                 x = df[df["HeartDisease"] == 'Yes'][dropdown_porcentaje_heart_disease_variables_categoricas],
-                marker_color = "blue",  # darkorange
+                marker_color = "red",  # darkorange
                 opacity = 0.75,
                 name = "Heart Disease"
             ),
             go.Histogram(
                 x = df[df["HeartDisease"] == 'No'][dropdown_porcentaje_heart_disease_variables_categoricas],
-                marker_color = "red",  # mediumseagreen
+                marker_color = "blue",  # mediumseagreen
                 opacity = 0.75,
                 name = "No Heart Disease"
             )
         ]
-        layout = go.Layout(title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], xaxis_title =diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], yaxis_title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas])
+        layout = go.Layout(title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], xaxis_title =diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], yaxis_title = "Count")  # yaxis_title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas]
 
         fig = go.Figure(data = data, layout = layout)
         fig.update_layout(width=500)
-        fig.update_layout(height=400)
+        fig.update_layout(height=330)
+
+        fig.update_layout(
+            font=dict(
+                family="Verdana",
+                size=11,  # Set the font size here
+            )
+        )
         
         return (fig,{"display":"inline-block"})
     else:
