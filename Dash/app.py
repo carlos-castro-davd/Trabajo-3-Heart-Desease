@@ -208,15 +208,7 @@ app.layout = html.Div(
 
             }
         ),
-        # Radio item para elegir distribucion general o comparacion YES/NO Heart Disease en variables numericas
-        dcc.RadioItems(
-                    id="radio_item_dist_var_numerica_selector",
-                    options=[
-                        {'label': '                     General                                   ', 'value': 'General'},
-                        {'label': '                     Comparacion YES/NO', 'value': 'Comparacion YES/NO'}
-                    ],
-                    value='General', style={"margin-top":"25px", "margin-left":"10px"}
-                ),
+    
                 
         html.Div(
             children = [
@@ -236,10 +228,28 @@ app.layout = html.Div(
                             style = {
                                 "display": "none"
                             }
+                        ),
+                # Radio item para elegir distribución de las variables cuantitativas entre los que tienen Heart Disease y los que no tienen 
+                dcc.RadioItems(
+                    id="radio_item_dist_var_numerica_selector_yes_no",
+                    options=[
+                        {'label': '                     Distribución YES Heart Disease                                   ', 'value': 'Distribución YES Heart Disease'},
+                        {'label': '                     Distribución NO Heart Disease', 'value': 'Distribución NO Heart Disease'}
+                    ],
+                    value='Distribución YES Heart Disease', style={"margin-top":"25px", "margin-left":"10px"}
+                ),
+                dcc.Graph(
+                            id = "histograma_distribucion_numericas_yes_no",
+                            style = {
+                                "display": "none"
+                            }
                         )
+
             ]
 
         ),
+
+        
 
         ## SLIDER TAMAÑO BINS HISTOGRAMA
         html.Div(
@@ -1092,12 +1102,11 @@ def pie_chart_distribucion_categoricas_dropdown(dropdown_categoricas):
     Output("dropdown_histograma_distribucion_numericas", "figure"),
     Output("dropdown_histograma_distribucion_numericas", "style"),
     Input("dropdown_numericas", "value"),
-    Input("slider_histograma_numericas", "value"),
-    Input("radio_item_dist_var_numerica_selector", "value")
+    Input("slider_histograma_numericas", "value")
 
 )
         
-def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histograma_numericas, radio_item_dist_var_numerica_selector):
+def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histograma_numericas):
     
     diccionario_variables_numericas = {
         "BMI":"Body Mass Index",
@@ -1106,11 +1115,72 @@ def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histogr
         "SleepTime":"Sleep Time"
     }
 
-    if dropdown_numericas and radio_item_dist_var_numerica_selector=='General':
+    if dropdown_numericas:
         
         data = [
         go.Histogram(
             x = df[dropdown_numericas],
+            marker_color = "firebrick",
+            xbins=dict(
+                start= 0,
+                size=slider_histograma_numericas
+            ),
+            opacity=0.6,
+        )]
+        layout = go.Layout(title = "Distribución de " + diccionario_variables_numericas[dropdown_numericas], 
+                    xaxis_title = diccionario_variables_numericas[dropdown_numericas], yaxis_title = "Frecuencia",
+                    barmode = "overlay", bargap = 0.1)
+        
+        fig = go.Figure(data = data, layout = layout)
+        
+        return (fig,{"display":"block"})
+    else:
+        return (go.Figure(data = [], layout = {}), {"display": "none"})
+ 
+ # 2.B CALLBACK DE RADIO BUTTON HISTOGRAMAS PARA VER DISTRIBUCION DE NUMERICAS EN LOS QUE TIENEN HEART DISEASE Y LOS QUE NO
+@app.callback(
+    Output("histograma_distribucion_numericas_yes_no", "figure"),
+    Output("histograma_distribucion_numericas_yes_no", "style"),
+    Input("dropdown_numericas", "value"),
+    Input("slider_histograma_numericas", "value"),
+    Input("radio_item_dist_var_numerica_selector_yes_no", "value")
+)
+
+def histograma_distribucion_numericas_dropdown_yes_no(dropdown_numericas,slider_histograma_numericas, radio_item_dist_var_numerica_selector_yes_no):
+    
+    diccionario_variables_numericas = {
+        "BMI":"Body Mass Index",
+        "MentalHealth":"Mental Health",
+        "PhysicalHealth":"Physical Health",
+        "SleepTime":"Sleep Time"
+    }
+
+    if dropdown_numericas and radio_item_dist_var_numerica_selector_yes_no=="Distribución YES Heart Disease":
+        
+        df_yes_HeartDisease = df[df['HeartDisease'] == 'Yes' ]
+        data = [
+        go.Histogram(
+            x = df_yes_HeartDisease[dropdown_numericas],
+            marker_color = "firebrick",
+            xbins=dict(
+                start= 0,
+                size=slider_histograma_numericas
+            ),
+            opacity=0.6,
+        )]
+        layout = go.Layout(title = "Distribución de " + diccionario_variables_numericas[dropdown_numericas], 
+                    xaxis_title = diccionario_variables_numericas[dropdown_numericas], yaxis_title = "Frecuencia",
+                    barmode = "overlay", bargap = 0.1)
+        
+        fig = go.Figure(data = data, layout = layout)
+        
+        return (fig,{"display":"block"})
+    elif dropdown_numericas and radio_item_dist_var_numerica_selector_yes_no=="Distribución NO Heart Disease":
+        
+        df_no_HeartDisease = df[df['HeartDisease'] == 'No' ]
+        data = [
+        go.Histogram(
+            x = df_no_HeartDisease[dropdown_numericas],
             marker_color = "firebrick",
             xbins=dict(
                 start= 0,
