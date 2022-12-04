@@ -15,6 +15,8 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import OrdinalEncoder
 import dash_daq as daq
 from plotly.graph_objects import Layout
+import dash_daq as daq
+import pickle as pk
 
 
 # Para este Dash, vamos a seleccionar un fichero de datos y realizar un dashboard descriptivo

@@ -14,6 +14,7 @@ from plotly.subplots import make_subplots
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import OrdinalEncoder
 import dash_daq as daq
+import pickle as pk
 
 
 # Para este Dash, vamos a seleccionar un fichero de datos y realizar un dashboard descriptivo
@@ -70,6 +71,76 @@ def radar_chart():
     )
 
     return fig
+
+# FUNCION PARA LEER EL MODELO Y REALIZAR LAS PREDICCIONES
+def realizar_prediccion(smoking_value, alcohol_value, stroke_value, diffwalking_value, 
+    sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
+    kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value):
+    prob = 0
+
+    # Leer los modelos
+    cluster = pk.load(open('../Modelo/cluster.plk', 'rb'))
+    scaler = pk.load(open('../Modelo/scaler.plk', 'rb'))
+    modelo_heart_disease = pk.load(open('../Modelo/modelo_heart_disease.plk', 'rb'))
+
+    new_obs = pd.DataFrame([[bmi_value, smoking_value, alcohol_value, stroke_value, physicalhealth_value,
+                            mentalhealth_value, diffwalking_value, sex_value, age_value, race_value, 
+                            diabetic_value, physicalactivity_value, genhealth_value, sleeptime_value,
+                            asthma_value, kidneydisease_value, skincancer_value]], index=[0],
+                           columns=df.columns.drop('HeartDisease'))
+    
+    genhealth_mapping = {"Excellent":4,"Very good":3,"Good":2,"Fair":1,"Poor":0}
+    agecategory_mapping = {"18-24":0,"25-29":1,"30-34":2,"35-39":3,"40-44":4,"45-49":5,"50-54":6,"55-59":7,
+                           "60-64":8,"65-69":9,"70-74":10,"75-79":11,"80 or older":12}
+    new_obs['GenHealth']= new_obs['GenHealth'].map(genhealth_mapping)
+    new_obs['AgeCategory']= new_obs['AgeCategory'].map(agecategory_mapping)
+    # new_obs = pd.get_dummies(new_obs, drop_first=True)
+    obs_encoded = pd.DataFrame([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]], index=[0],
+                               columns = ['BMI', 'PhysicalHealth', 'MentalHealth', 'AgeCategory', 'GenHealth',
+                                          'SleepTime', 'Smoking_Yes', 'AlcoholDrinking_Yes',
+                                          'Stroke_Yes', 'DiffWalking_Yes', 'Sex_Male', 'Race_Asian', 'Race_Black',
+                                          'Race_Hispanic', 'Race_Other', 'Race_White',
+                                          'Diabetic_No, borderline diabetes', 'Diabetic_Yes',
+                                          'Diabetic_Yes (during pregnancy)', 'PhysicalActivity_Yes', 'Asthma_Yes',
+                                          'KidneyDisease_Yes', 'SkinCancer_Yes'])
+    obs_encoded['SleepTime']=new_obs['SleepTime']
+    obs_encoded['PhysicalHealth']=new_obs['PhysicalHealth']
+    obs_encoded['MentalHealth']=new_obs['MentalHealth']
+    obs_encoded['GenHealth'] = new_obs['GenHealth']
+    obs_encoded['AgeCategory'] = new_obs['AgeCategory']
+    obs_encoded['Smoking_Yes'] = [1 if smoking_value=='Yes' else 0]
+    obs_encoded['AlcoholDrinking_Yes'] = [1 if alcohol_value=='Yes' else 0]
+    obs_encoded['Stroke_Yes'] = [1 if stroke_value=='Yes' else 0]
+    obs_encoded['DiffWalking_Yes'] = [1 if diffwalking_value=='Yes' else 0]
+    obs_encoded['Sex_Male'] = [1 if sex_value=='Male' else 0]
+    obs_encoded['Race_Black'] = [1 if race_value=='Black' else 0]
+    obs_encoded['Race_Hispanic'] = [1 if race_value=='Hispanic' else 0]
+    obs_encoded['Race_Other'] = [1 if race_value=='Other' else 0]
+    obs_encoded['Race_White'] = [1 if race_value=='White' else 0]
+    obs_encoded['Diabetic_No, borderline diabetes'] = [1 if diabetic_value=='No, borderline diabetes' else 0]
+    obs_encoded['Diabetic_Yes'] = [1 if diabetic_value=='Yes' else 0]
+    obs_encoded['Asthma_Yes'] = [1 if asthma_value=='Yes' else 0]
+    obs_encoded['KidneyDisease_Yes'] = [1 if kidneydisease_value=='Yes' else 0]
+    obs_encoded['SkinCancer_Yes'] = [1 if skincancer_value=='Yes' else 0]
+    
+    # Variables que se eliminaran pero que hay que poner antes del scaler para que no de error
+    obs_encoded['BMI']=0
+    obs_encoded['Diabetic_Yes (during pregnancy)']=0
+    obs_encoded['PhysicalActivity_Yes']=0
+    obs_encoded['Race_Asian']=0
+    
+    
+    obs_encoded_scaled = pd.DataFrame(scaler.transform(obs_encoded), columns=obs_encoded.columns)
+    
+    obs_encoded_scaled = obs_encoded_scaled.drop(['BMI','Diabetic_Yes (during pregnancy)','PhysicalActivity_Yes','Race_Asian'],axis=1)
+    
+    obs_encoded_scaled['cluster'] = cluster.predict(obs_encoded_scaled)
+    
+    probability = modelo_heart_disease.predict_proba(obs_encoded_scaled)
+    #prediction = modelo_heart_disease.predict(obs_encoded_scaled)
+    
+    return probability[0][1]
+
 
 
 
@@ -1480,7 +1551,9 @@ def scatter_plot_correlacion_numerica_numerica(dropdown_1_scatter_correlacion_nu
 def update_div_prediccion(n_clicks,smoking_value, alcohol_value, stroke_value, diffwalking_value, 
     sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
     kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value):
-    return 'Smoking: {}, BMI: {}, mentalhealth: {}, Race: {}, Diabetes: {}, GenHealth: {}, Age: {}'.format(smoking_value, bmi_value, mentalhealth_value, race_value, diabetic_value, genhealth_value, age_value)
+    return 'Probability of having heart disease: {}%'.format(round(realizar_prediccion(smoking_value, alcohol_value, stroke_value, diffwalking_value, 
+            sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
+            kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value)*100,2))
 
 
 
