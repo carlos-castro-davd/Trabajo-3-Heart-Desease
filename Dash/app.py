@@ -25,7 +25,15 @@ df = pd.read_csv('../Datos/heart_2020_cleaned.csv')
 # 6.A FUNCION RADAR CHART
 def radar_chart():
     scaler = MinMaxScaler()
-    numerical = df.loc[:, ["BMI","PhysicalHealth","MentalHealth", "SleepTime", "HeartDisease","AgeCategory", "Smoking", "KidneyDisease", "Stroke", "SkinCancer", "PhysicalActivity"]]
+    numerical = df.loc[:, ["BMI","PhysicalHealth","MentalHealth", "SleepTime", "HeartDisease","AgeCategory", "Smoking", "KidneyDisease", "Stroke", "SkinCancer", "PhysicalActivity", "GenHealth"]]
+    genhealth_mapping = {"Excellent":4,"Very good":3,"Good":2,"Fair":1,"Poor":0}
+    agecategory_mapping = {"18-24":0,"25-29":1,"30-34":2,"35-39":3,"40-44":4,"45-49":5,"50-54":6,"55-59":7,
+                            "60-64":8,"65-69":9,"70-74":10,"75-79":11,"80 or older":12}
+
+    numerical['GenHealth']= numerical['GenHealth'].map(genhealth_mapping)
+    numerical['AgeCategory']= numerical['AgeCategory'].map(agecategory_mapping)
+
+
     encoder = OrdinalEncoder()
     result = encoder.fit_transform(numerical.drop(['HeartDisease'], axis=1))
     numerical = pd.DataFrame(result, columns = numerical.drop(['HeartDisease'], axis=1).columns)
@@ -36,7 +44,7 @@ def radar_chart():
     numerical_yes_HeartDisease = numerical_scaled[numerical_scaled['HeartDisease'] == 'Yes' ] #rojo
     numerical_no_HeartDisease = numerical_scaled[numerical_scaled['HeartDisease'] == 'No' ]
     categories = ['BMI','PhysicalHealth','MentalHealth',
-            'AgeCategory', 'Smoking', 'KidneyDisease', 'Stroke', 'SkinCancer','PhysicalActivity']
+            'AgeCategory', 'Smoking', 'KidneyDisease', 'Stroke', 'SkinCancer','PhysicalActivity', 'GenHealth']
 
     fig = go.Figure()
 
@@ -45,7 +53,8 @@ def radar_chart():
              numerical_no_HeartDisease['MentalHealth'].mean(), 
              numerical_no_HeartDisease['AgeCategory'].mean(), numerical_no_HeartDisease['Smoking'].mean(),
             numerical_no_HeartDisease['KidneyDisease'].mean(), numerical_no_HeartDisease['Stroke'].mean(),
-            numerical_no_HeartDisease['SkinCancer'].mean(), numerical_no_HeartDisease['PhysicalActivity'].mean()],
+            numerical_no_HeartDisease['SkinCancer'].mean(), numerical_no_HeartDisease['PhysicalActivity'].mean(),
+            numerical_no_HeartDisease['GenHealth'].mean()],
           theta=categories,
           fill='toself',
           name='No Heart Disease',marker=dict(color="blue")
@@ -55,7 +64,8 @@ def radar_chart():
              numerical_yes_HeartDisease['MentalHealth'].mean(),
             numerical_yes_HeartDisease['AgeCategory'].mean(), numerical_yes_HeartDisease['Smoking'].mean(),
             numerical_yes_HeartDisease['KidneyDisease'].mean(), numerical_yes_HeartDisease['Stroke'].mean(),
-            numerical_yes_HeartDisease['SkinCancer'].mean(), numerical_yes_HeartDisease['PhysicalActivity'].mean()],
+            numerical_yes_HeartDisease['SkinCancer'].mean(), numerical_yes_HeartDisease['PhysicalActivity'].mean(),
+            numerical_yes_HeartDisease['GenHealth'].mean()],
           theta=categories, 
           fill='toself',
           name='Yes Heart Disease',marker=dict(color="red")
