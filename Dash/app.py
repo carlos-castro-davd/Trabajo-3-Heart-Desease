@@ -1309,7 +1309,7 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
         trace = go.Bar(x = df[dropdown_porcentaje_heart_disease_variables_categoricas].unique(),
                     y = y,
                     name = "HeartDisease",
-                    marker_color = "mediumseagreen",  # firebrick
+                    marker_color = "darkcian",  # firebrick mediumseagreen
                     text= ["{0}%".format(round(value*100,1)) for value in y],
                     textposition="auto",
                     opacity=0.8,
