@@ -26,6 +26,83 @@ df = pd.read_csv('../Datos/heart_2020_cleaned.csv')
 df['Race'] = df['Race'].map({'American Indian/Alaskan Native': 'Native American',
                              'White':'White', 'Black':'Black','Asian':'Asian','Hispanic':'Hispanic','Other':'Other'})
 
+def plot_correlation_matrix_numericals():
+    df_numerical = df[['BMI','PhysicalHealth','MentalHealth', 'SleepTime']]
+    # Compute the correlations
+    corr_matrix = df.corr()
+
+    # Generate the heatmap
+    fig = px.imshow(corr_matrix, color_continuous_scale='Viridis')  # color_continuous_scale=["yellow", "red"]
+    fig.update_layout(title="Correlation Matrix")
+    fig.update_layout(height=500,width=400)
+
+    return fig
+
+
+# 6.A FUNCION RADAR CHART
+def radar_chart():
+    scaler = MinMaxScaler()
+    numerical = df.loc[:, ["BMI","PhysicalHealth","MentalHealth", "SleepTime", "HeartDisease","AgeCategory", "Smoking", "KidneyDisease", "Stroke", "SkinCancer", "PhysicalActivity", "GenHealth"]]
+    genhealth_mapping = {"Excellent":4,"Very good":3,"Good":2,"Fair":1,"Poor":0}
+    agecategory_mapping = {"18-24":0,"25-29":1,"30-34":2,"35-39":3,"40-44":4,"45-49":5,"50-54":6,"55-59":7,
+                            "60-64":8,"65-69":9,"70-74":10,"75-79":11,"80 or older":12}
+
+    numerical['GenHealth']= numerical['GenHealth'].map(genhealth_mapping)
+    numerical['AgeCategory']= numerical['AgeCategory'].map(agecategory_mapping)
+
+
+    encoder = OrdinalEncoder()
+    result = encoder.fit_transform(numerical.drop(['HeartDisease'], axis=1))
+    numerical = pd.DataFrame(result, columns = numerical.drop(['HeartDisease'], axis=1).columns)
+    scaler.fit(numerical)
+    numerical_scaled = scaler.transform(numerical)
+    numerical_scaled = pd.DataFrame(numerical_scaled, columns = numerical.columns)
+    numerical_scaled["HeartDisease"] = df["HeartDisease"]
+    numerical_yes_HeartDisease = numerical_scaled[numerical_scaled['HeartDisease'] == 'Yes' ] #rojo
+    numerical_no_HeartDisease = numerical_scaled[numerical_scaled['HeartDisease'] == 'No' ]
+    categories = ['BMI','PhysicalHealth','MentalHealth',
+            'AgeCategory', 'Smoking', 'KidneyDisease', 'Stroke', 'SkinCancer','PhysicalActivity', 'GenHealth']
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatterpolar(
+          r=[numerical_no_HeartDisease['BMI'].mean(),numerical_no_HeartDisease['PhysicalHealth'].mean(), 
+             numerical_no_HeartDisease['MentalHealth'].mean(), 
+             numerical_no_HeartDisease['AgeCategory'].mean(), numerical_no_HeartDisease['Smoking'].mean(),
+            numerical_no_HeartDisease['KidneyDisease'].mean(), numerical_no_HeartDisease['Stroke'].mean(),
+            numerical_no_HeartDisease['SkinCancer'].mean(), numerical_no_HeartDisease['PhysicalActivity'].mean(),
+            numerical_no_HeartDisease['GenHealth'].mean()],
+          theta=categories,
+          fill='toself',
+          name='No Heart Disease',marker=dict(color="blue")
+    ))
+    fig.add_trace(go.Scatterpolar(
+          r=[numerical_yes_HeartDisease['BMI'].mean(),numerical_yes_HeartDisease['PhysicalHealth'].mean(), 
+             numerical_yes_HeartDisease['MentalHealth'].mean(),
+            numerical_yes_HeartDisease['AgeCategory'].mean(), numerical_yes_HeartDisease['Smoking'].mean(),
+            numerical_yes_HeartDisease['KidneyDisease'].mean(), numerical_yes_HeartDisease['Stroke'].mean(),
+            numerical_yes_HeartDisease['SkinCancer'].mean(), numerical_yes_HeartDisease['PhysicalActivity'].mean(),
+            numerical_yes_HeartDisease['GenHealth'].mean()],
+          theta=categories, 
+          fill='toself',
+          name='Yes Heart Disease',marker=dict(color="red")
+    ))
+
+    fig.update_layout(
+      polar=dict(
+        radialaxis=dict(
+          visible=True,
+          range=[0, 1]
+        )),
+      showlegend=False
+    ),
+
+    fig.update_layout(title="Radar chart", width=550,height=550)
+
+    return fig
+
+
+
 # Crear opciones para las variables categóricas
 
 cols_categoricas = ["HeartDisease","Smoking","AlcoholDrinking", "Stroke", 
@@ -403,181 +480,360 @@ app.layout = html.Div(
         
         ## 3. Distribucion variables numericas
 
-        html.H2(
-            children = [
-                "Variables Numéricas: Distribución"
-            ],
-            id = "distribucion_numericas",
-            style = {
-                "text-align": "center",
-                "margin-bottom": "20px",
-                "height": "50px",
-                "margin-top":"40px",
-                "text-align": "left"
-
-            }
-        ),
         html.Div(
             children = [
-                dcc.Dropdown(
-                            options = dropdown_numericas,
-                            value="BMI",
-                            placeholder = "Selecciona una variable numerica",
-                            id = "dropdown_numericas",
+                html.Div(
+                    children=[
+                        html.H3(
+                            children = [
+                                "VARIABLES NUMÉRICAS: DISTRIBUCIÓN"
+                            ],
+                            id = "distribucion_numericas",
                             style = {
-                                "display": "block",
-                                "width": "300px",
-                                "margin-left": "10px"
+                                "text-align": "left",
+                                "margin": "2.5%",
+                                "margin-bottom": "4%",
+                                "text-align": "left",
+                                "font-family": "verdana",
+                                "font-weight": "600",
+                                "color": "rgb(67,67,67)",
+                                "text-align": "left"
                             }
                         ),
-                dcc.Graph(
-                            id = "dropdown_histograma_distribucion_numericas",
-                            style = {
-                                "display": "none"
+                        html.Div(
+                            children = [
+                                dcc.Dropdown(
+                                            options = dropdown_numericas,
+                                            value="BMI",
+                                            placeholder = "Selecciona una variable numerica",
+                                            id = "dropdown_numericas",
+                                            style = {
+                                                "display": "block",
+                                                "width": "300px",
+                                                "margin-left": "10px",
+                                                "display": "block",
+                                                'font-size' : '85%',
+                                                'font-family':'verdana'
+                                            }
+                                        ),
+                                dcc.Graph(
+                                            id = "dropdown_histograma_distribucion_numericas",
+                                            style = {
+                                                "display": "none"
+                                            }
+                                        )
+                            ]
+                        ),
+
+                        ## SLIDER TAMAÑO BINS HISTOGRAMA
+                        html.Div(
+                            children=[
+                                html.P(
+                                    children = [
+                                        "Seleccione el tamaño de los bins del histograma: "
+                                    ],
+                                    id ="descripcion_slider",
+                                    style = {
+                                        "text-align": "left",
+                                        "margin-bottom": "15px",
+                                        "font-size":"15px"
+                                    }
+                                ),
+
+                                dcc.Slider(id="slider_histograma_numericas", min=1, max=6, step=1, value=2, marks={'1': '1', '2': '2','3':'3','4':'4','5':'5','6':'6'})
+                            ],
+                            style={
+                                "margin-left": "25%",
+                                "margin-right": "25%",
+                                "margin-bottom" : "4px",
+                                "text-align": "center"
                             }
-                        )
-            ]
-
-        ),
-
-        ## SLIDER TAMAÑO BINS HISTOGRAMA
-        html.Div(
-            children=[
-                html.P(
-                    children = [
-                         "Seleccione el tamaño de los bins del histograma: "
+                        ),
                     ],
-                    id ="descripcion_slider",
-                    style = {
-                        "text-align": "left",
-                        "margin-bottom": "20px"
+                    id="div_histograma_numericas",
+                    style={
+                        "background-color":"rgb(255,255,255)",
+                        "border":"1px solid rgb(204,202,202)",
+                        "margin":"1%",
+                        "margin-top":"48px",  # 32 px
+                        "margin-left":"2.9%",
+                        "margin-right":"0%",
+                        "padding-left":"0.5%",
+                        "display": "inline-block",
+                        "border-radius" : "2px",
+                        "width":"50em",
+                        "padding-bottom":"1%",
+                        "height":"40em"
                     }
                 ),
-
-                dcc.Slider(id="slider_histograma_numericas", min=1, max=6, step=1, value=2, marks={'1': '1', '2': '2','3':'3','4':'4','5':'5','6':'6'})
-            ],
-            style={
-                "margin-left": "25%",
-                "margin-right": "25%",
-                "text-align": "center"
-            }
-        ),
-
-        
-
-        ## 5. Comparacion Heart Disease según variables categóricas y numéricas
-        html.H2(
-            children = [
-                "Heart Disease según variables numéricas y categóricas"
-            ],
-            id = "comparacion_heart_disease_categorica_numerica",
-            style = {
-                "text-align": "center",
-                "margin-bottom": "20px",
-                "height": "50px",
-                "margin-top":"40px",
-                "text-align": "left"
-
-            }
-        ),
-        html.Div(
-            children = [
-                dcc.Dropdown(
-                            options = dropdown_categoricas,
-                            value="Race",
-                            placeholder = "Selecciona una variable categorica",
-                            id = "dropdown_cat_comparacion_categorica_numerica",
+                html.Div(
+                    children = [
+                        html.H3(
+                            children = [
+                                "MATRIZ DE CORRELACIÓN ENTRE VARIABLES NUMÉRICAS"
+                            ],
+                            id = "titulo_matriz_correlacion",
                             style = {
-                                "display": "block",
-                                "width": "300px",
-                                "margin-left": "10px"
+                                "text-align": "left",
+                                "margin": "2.5%",
+                                "margin-bottom": "8%",
+                                "text-align": "left",
+                                "font-family": "verdana",
+                                "font-weight": "600",
+                                "color": "rgb(67,67,67)",
+                                "text-align": "left"
                             }
                         ),
-                dcc.Dropdown(
-                            options = dropdown_numericas,
-                            value="BMI",
-                            placeholder = "Selecciona una variable numerica",
-                            id = "dropdown_num_comparacion_categorica_numerica",
+                        dcc.Graph(
+                            id = "plot_matriz_correlacion",
+                            figure=plot_correlation_matrix_numericals(),
                             style = {
-                                "display": "block",
-                                "width": "300px",
-                                "margin-left": "10px"
-                            }
-                        ),
-                dcc.RadioItems(
-                    id="radio_item_box_violin_selector",
-                    options=[
-                        {'label': '                     Box Plot                                   ', 'value': 'Box Plot'},
-                        {'label': '                     Violin Plot', 'value': 'Violin Plot'}
-                    ],
-                    value='Box Plot', style={"margin-top":"25px", "margin-left":"10px"}
-                ),
-                
-                dcc.Graph(
-                            id = "comparacion_boxplot_heart_disease_segun_var_cat_y_num",
-                            style = {
-                                "display": "none",
-                            }
-                        ),
-                
-                dcc.Graph(
-                            id = "comparacion_violinplot_heart_disease_segun_var_cat_y_num",
-                            style = {
-                                "display": "none",
+                                #"display": "none"
                             }
                         )
-            ]
-
+                    ],
+                    id="div_matriz_correlacion",
+                    style={
+                        "background-color":"rgb(255,255,255)",
+                        "border":"1px solid rgb(204,202,202)",
+                        "margin":"1%",
+                        "margin-top":"48px",  # 32 px
+                        "margin-left":"1.5%",
+                        "margin-right":"0%",
+                        "padding-left":"0.5%",
+                        "display": "inline-block",
+                        "border-radius" : "2px",
+                        "width":"26.5em",
+                        "padding-bottom":"1%",
+                        "verticalAlign": "top",
+                        "height":"40em"
+                    }
+                ),
+            ],
+            style={"width":"100%","display":"inline"}
         ),
 
         ## 6. Correlación entre variables numéricas
-        html.H2(
-            children = [
-                "Correlación entre variables numéricas"
-            ],
-            id = "titulo_correlacion_entre_variables_numericas",
-            style = {
-                "text-align": "center",
-                "margin-bottom": "20px",
-                "height": "50px",
-                "margin-top":"40px",
-                "text-align": "left"
+        html.Div(
+            children=[
+                html.Div(
+                    children=[
+                        html.H3(
+                            children = [
+                                "Correlación entre variables numéricas"
+                            ],
+                            id = "titulo_correlacion_entre_variables_numericas",
+                            style = {
+                                "text-align": "left",
+                                "margin": "2.5%",
+                                "margin-bottom": "4%",
+                                "text-align": "left",
+                                "font-family": "verdana",
+                                "font-weight": "600",
+                                "color": "rgb(67,67,67)",
+                                "text-align": "left"
+                            }
+                        ),
+                        html.Div(
+                            children = [
+                                dcc.Dropdown(
+                                            options = dropdown_numericas,
+                                            value="SleepTime",
+                                            placeholder = "Selecciona una variable numerica",
+                                            id = "dropdown_1_scatter_correlacion_numerica_numerica",
+                                            style = {
+                                                "display": "block",
+                                                "width": "300px",
+                                                "margin-left": "10px",
+                                                "display": "block",
+                                                'font-size' : '85%',
+                                                'font-family':'verdana'
+                                            }
+                                        ),
+                                dcc.Dropdown(
+                                            options = dropdown_numericas,
+                                            value="BMI",
+                                            placeholder = "Selecciona una variable numerica",
+                                            id = "dropdown_2_scatter_correlacion_numerica_numerica",
+                                            style = {
+                                                "display": "block",
+                                                "width": "300px",
+                                                "margin-left": "10px",
+                                                "display": "block",
+                                                'font-size' : '85%',
+                                                'font-family':'verdana'
+                                            }
+                                        ),
+                                dcc.Graph(
+                                            id = "scatter_correlacion_numerica_numerica",
+                                            style = {
+                                                "display": "none"
+                                            }
+                                        )
 
+                            ]
+                        ),
+                    ],
+                    id="div_scatter_complejo_numericas",
+                    style={
+                        "background-color":"rgb(255,255,255)",
+                        "border":"1px solid rgb(204,202,202)",
+                        "margin":"1%",
+                        "margin-top":"48px",  # 32 px
+                        "margin-left":"2.9%",
+                        "margin-right":"0%",
+                        "padding-left":"0.5%",
+                        "display": "inline-block",
+                        "border-radius" : "2px",
+                        "width":"42em",
+                        "padding-bottom":"1%",
+                        "height":"39em"
+                    }
+                ),
+                html.Div(
+                    children=[
+                        html.H3(
+                            children = [
+                                "PERFIL DE PERSONAS SANAS Y ENFERMAS"
+                            ],
+                            id = "radar_chart_variables",
+                            style = {
+                                "text-align": "left",
+                                "margin": "2.5%",
+                                "margin-bottom": "4%",
+                                "text-align": "left",
+                                "font-family": "verdana",
+                                "font-weight": "600",
+                                "color": "rgb(67,67,67)",
+                                "text-align": "left"
+                            }
+                        ),
+                        html.Div(
+                            children = [
+                                dcc.Graph(
+                                    figure=radar_chart(),
+                                    id = "titulo_radar_chart",
+                                    style = {
+                                        "display": "inline-block",
+                                        "margin-left":"2px","padding-left":"0px",
+                                        "margin-right":"0px","padding-right":"0px"
+                                    }
+                                )
+                            ]
+                        ),
+                    ],
+                    id="div_radar_chart",
+                    style={
+                        "background-color":"rgb(255,255,255)",
+                        "border":"1px solid rgb(204,202,202)",
+                        "margin":"1%",
+                        "margin-top":"48px",  # 32 px
+                        "margin-left":"1.5%",
+                        "margin-right":"0%",
+                        "padding-left":"0.5%",
+                        "display": "inline-block",
+                        "border-radius" : "2px",
+                        "width":"34.5em",
+                        "padding-bottom":"1%",
+                        "verticalAlign": "top",
+                        "height":"39em"
+                    }
+                )
+            ],
+            style={"width":"100%","display":"inline"}
+        ),
+
+        html.Div(
+            children=[
+                ## 5. Comparacion Heart Disease según variables categóricas y numéricas
+                html.H3(
+                    children = [
+                        "DISTRIBUCIÓN DE VARIABLES NUMERICAS PARA DISTINTAS CATEGORÍAS"
+                    ],
+                    id = "comparacion_heart_disease_categorica_numerica",
+                    style = {
+                        "text-align": "left",
+                        "margin": "2.5%",
+                        "margin-bottom": "4%",
+                        "text-align": "left",
+                        "font-family": "verdana",
+                        "font-weight": "600",
+                        "color": "rgb(67,67,67)",
+                        "text-align": "left"
+                    }
+                ),
+                html.Div(
+                    children = [
+                        dcc.Dropdown(
+                                    options = dropdown_categoricas,
+                                    value="Race",
+                                    placeholder = "Selecciona una variable categorica",
+                                    id = "dropdown_cat_comparacion_categorica_numerica",
+                                    style = {
+                                        "display": "block",
+                                        "width": "300px",
+                                        "margin-left": "10px",
+                                        "display": "block",
+                                        'font-size' : '85%',
+                                        'font-family':'verdana'
+                                    }
+                                ),
+                        dcc.Dropdown(
+                                    options = dropdown_numericas,
+                                    value="BMI",
+                                    placeholder = "Selecciona una variable numerica",
+                                    id = "dropdown_num_comparacion_categorica_numerica",
+                                    style = {
+                                        "display": "block",
+                                        "width": "300px",
+                                        "margin-left": "10px",
+                                        "display": "block",
+                                        'font-size' : '85%',
+                                        'font-family':'verdana'
+                                    }
+                                ),
+                        dcc.RadioItems(
+                            id="radio_item_box_violin_selector",
+                            options=[
+                                {'label': '                     Box Plot                                   ', 'value': 'Box Plot'},
+                                {'label': '                     Violin Plot', 'value': 'Violin Plot'}
+                            ],
+                            value='Box Plot', style={"margin-top":"25px", "margin-left":"10px"}
+                        ),
+                        
+                        dcc.Graph(
+                                    id = "comparacion_boxplot_heart_disease_segun_var_cat_y_num",
+                                    style = {
+                                        "display": "none",
+                                    }
+                                ),
+                        
+                        dcc.Graph(
+                                    id = "comparacion_violinplot_heart_disease_segun_var_cat_y_num",
+                                    style = {
+                                        "display": "none",
+                                    }
+                                )
+                    ]
+
+                ),
+            ],
+            id="div_box_plot_violin",
+            style={
+                "background-color":"rgb(255,255,255)",
+                "border":"1px solid rgb(204,202,202)",
+                "margin":"1%",
+                "margin-top":"48px",  # 32 px
+                "margin-left":"2.9%",
+                "margin-right":"0%",
+                "padding-left":"0.5%",
+                "display": "inline-block",
+                "border-radius" : "2px",
+                "width":"78.5em",
+                "padding-bottom":"1%",
+                "height":"48em"
             }
         ),
-        html.Div(
-            children = [
-                dcc.Dropdown(
-                            options = dropdown_numericas,
-                            value="SleepTime",
-                            placeholder = "Selecciona una variable numerica",
-                            id = "dropdown_1_scatter_correlacion_numerica_numerica",
-                            style = {
-                                "display": "block",
-                                "width": "300px",
-                                "margin-left": "10px"
-                            }
-                        ),
-                dcc.Dropdown(
-                            options = dropdown_numericas,
-                            value="BMI",
-                            placeholder = "Selecciona una variable numerica",
-                            id = "dropdown_2_scatter_correlacion_numerica_numerica",
-                            style = {
-                                "display": "block",
-                                "width": "300px",
-                                "margin-left": "10px"
-                            }
-                        ),
-                dcc.Graph(
-                            id = "scatter_correlacion_numerica_numerica",
-                            style = {
-                                "display": "none"
-                            }
-                        )
-
-            ]
-        )
         
 
 
@@ -676,6 +932,15 @@ def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histogr
                     barmode = "overlay", bargap = 0.1)
         
         fig = go.Figure(data = data, layout = layout)
+
+        fig.update_layout(height=390)
+
+        fig.update_layout(
+            font=dict(
+                family="Verdana",
+                size=11,  # Set the font size here
+            )
+        )
         
         return (fig,{"display":"block"})
     else:
@@ -854,8 +1119,13 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
         
         fig = px.box(df, y=dropdown_cat_comparacion_categorica_numerica, x=dropdown_num_comparacion_categorica_numerica, color="HeartDisease",title="Heart Disease distribution by" + diccionario_variables_numericas[dropdown_num_comparacion_categorica_numerica] + "and" + diccionario_columnas_categoricas[dropdown_cat_comparacion_categorica_numerica])
         fig.update_traces(quartilemethod="exclusive") 
-
-        return (fig,{"display":"block", "height":"750px"})
+        fig.update_layout(
+            font=dict(
+                family="Verdana",
+                size=11,  # Set the font size here
+            )
+        )
+        return (fig,{"display":"block", "height":"555px"})
     else:
         return (go.Figure(data = [], layout = {}), {"display": "none"})
 
@@ -916,10 +1186,12 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
                 )
         fig.update_traces(meanline_visible=True)
         fig.update_layout(violingap=0, violinmode='overlay')
-      
-  
-    
-        
+        fig.update_layout(
+            font=dict(
+                family="Verdana",
+                size=11,  # Set the font size here
+            )
+        )
         return (fig,{"display":"block"})
     else:
         return (go.Figure(data = [], layout = {}), {"display": "none"})
@@ -948,7 +1220,12 @@ def scatter_plot_correlacion_numerica_numerica(dropdown_1_scatter_correlacion_nu
         fig = px.scatter(df, x=dropdown_1_scatter_correlacion_numerica_numerica, y=dropdown_2_scatter_correlacion_numerica_numerica, color="HeartDisease",
         title="Correlation between " + diccionario_variables_numericas[dropdown_1_scatter_correlacion_numerica_numerica] + "and " + diccionario_variables_numericas[dropdown_2_scatter_correlacion_numerica_numerica])
     
-        
+        fig.update_layout(
+            font=dict(
+                family="Verdana",
+                size=11,  # Set the font size here
+            )
+        )
         return (fig,{"display":"block"})
     else:
         return (go.Figure(data = [], layout = {}), {"display": "none"})
