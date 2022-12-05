@@ -22,6 +22,30 @@ import pickle as pk
 
 df = pd.read_csv('../Datos/heart_2020_cleaned.csv')
 
+#  FUNCION BULLET CHART PROBABILITY
+def bullet_chart_heartdisease_probability(probability):
+    fig = go.Figure(go.Indicator(
+    mode = "number+gauge", value = probability, number_font_color="black", 
+    number = {"suffix": "%"},
+    domain = {'x': [0, 1], 'y': [0, 1]},
+    delta = {'reference': 50, 'position': "top", 'valueformat':'.2%'},
+    title = {'text':"<b>Prob %</b><br><span style='color: gray; font-size:0.8em'></span>", 'font': {"size": 14}},
+    gauge = {
+        'shape': "bullet",
+        'axis': {'range': [None, 100]},
+        'threshold': {
+            'line': {'color': "red", 'width': 2},
+            'thickness': 0.75, 'value': 270},
+        'bgcolor': "white",
+        'steps': [
+            {'range': [0, 50], 'color': "lightskyblue"},
+            {'range': [50, 100], 'color': "orangered"}],
+        'bar': {'color': "black"}}))
+    fig.update_layout(height = 250, width=1000)
+    
+    return fig
+
+
 # 6.A FUNCION RADAR CHART
 def radar_chart():
     scaler = MinMaxScaler()
@@ -1108,7 +1132,20 @@ app.layout = html.Div(
         ## DIV PREDICCION MODELO
         html.Div(
             id ="div_prediccion"
+        ),
+        html.Div(
+            children = [
+                dcc.Graph(
+                    figure=bullet_chart_heartdisease_probability(70),
+                    id = "bullet_chart_probability",
+                    style = {
+                        "display": "inline-block"
+                    }
+                )
+
+            ]
         )
+        
         
 
 
