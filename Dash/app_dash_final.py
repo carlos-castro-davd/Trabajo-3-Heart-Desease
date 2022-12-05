@@ -10,11 +10,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import logging
-from plotly.subplots import make_subplots
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import OrdinalEncoder
-import dash_daq as daq
-from plotly.graph_objects import Layout
 import dash_daq as daq
 import pickle as pk
 from aux_functions import *
@@ -102,7 +97,7 @@ app.layout = html.Div(
 
     children= [
 
-        # 1. TÍTULO
+        # 1. TÍTULO GLOBAL
 
         html.Div(
             children = [
@@ -132,7 +127,7 @@ app.layout = html.Div(
         ),
 
 
-        ## 2. PRIMER DIV DE CONTENIDO: DISTRIBUCIÓN CATEGÓRICAS Y PROPORCIÓN TARGET EN CATEGORICAS
+        ## 2. PRIMER DIV DE CONTENIDO: OVERVIEW BÁSICO, DISTRIBUCIÓN CATEGÓRICAS Y PROPORCIÓN TARGET EN CATEGORICAS
 
         html.Div(
             children=[
@@ -448,7 +443,7 @@ app.layout = html.Div(
         ),
 
         
-        ## 3. Distribucion variables numericas
+        ## 3. DISTRIBUCIÓN DE VARIABLES NUMÉRICAS
 
         html.Div(
             children = [
@@ -505,7 +500,7 @@ app.layout = html.Div(
                             ]
                         ),
 
-                        ## SLIDER TAMAÑO BINS HISTOGRAMA
+                        ## Slider tamaño bins histograma
                         html.Div(
                             children=[
                                 html.P(
@@ -593,7 +588,7 @@ app.layout = html.Div(
             style={"width":"100%","display":"inline"}
         ),
 
-        ## 6. Correlación entre variables numéricas
+        ## 4. SCATTER PLOT PARA VISUALIZAR POTENCIAL CORRELACIÓN ENTRE VARIABLES NUMÉRICAS
         html.Div(
             children=[
                 html.Div(
@@ -723,9 +718,9 @@ app.layout = html.Div(
             style={"width":"100%","display":"inline"}
         ),
 
+        ## 5. DISTRIBUCIÓN DE VARIABLES NUMERICAS PARA DISTINTAS CATEGORÍAS Y PARA ENFERMOS / NO ENFERMOS SIMULTÁNEAMENTE.
         html.Div(
             children=[
-                ## 5. Comparacion Heart Disease según variables categóricas y numéricas
                 html.H3(
                     children = [
                         "DISTRIBUCIÓN DE VARIABLES NUMERICAS PARA DISTINTAS CATEGORÍAS"
@@ -815,9 +810,9 @@ app.layout = html.Div(
             }
         ),
 
+        ## 7. LECTURA DE DATOS PARA REALIZAR PREDICCIONES CON EL MODELO
         html.Div(
             children=[
-                        ## 7. Modelo
                 html.H3(
                     children = [
                         "REALIZAR PREDICCIONES"
@@ -834,7 +829,7 @@ app.layout = html.Div(
                         "text-align": "left"
                     }
                 ),
-                html.Div( ## SMOKING
+                html.Div( ## Smoking
                     children = [
                         html.H4( 
                             children = [
@@ -870,7 +865,7 @@ app.layout = html.Div(
                     ],
                     style={"display": "inline-block", "margin":"1%"}
                 ),
-                html.Div( ## ALCOHOL DRINKING
+                html.Div( ## Alcohol drinking
                     children = [
                         html.H4( 
                             children = [
@@ -906,7 +901,7 @@ app.layout = html.Div(
                     ],
                     style={"display": "inline-block", "margin":"1%"}
                 ),
-                html.Div( ## STROKE
+                html.Div( ## Stroke
                     children = [
                         html.H4( 
                             children = [
@@ -1440,11 +1435,11 @@ app.layout = html.Div(
                     ], style={ "margin":"2%", "padding-left":"38%","margin":"3%"}
                 ),
 
-                ## DIV PREDICCION MODELO
+                ## DIV PREDICCION MODELO (TEXTO)
                 html.Div(
                     id ="div_prediccion"
                 ),
-                ## DIV PREDICCION MODELO
+                ## REPRESENTACIÓN GRÁFICA DE LA PROBABILIDAD USANDO UN BULLET CHART
                 html.Div(
                     children = [
                         dcc.Graph(
@@ -1496,25 +1491,20 @@ app.layout = html.Div(
 )
 
 def pie_chart_distribucion_categoricas_dropdown(dropdown_categoricas):
+    '''
+    Función que recibe categórica elegida por el usuario y representa en un pie chart la proporción de cada una de sus clases.
 
-    diccionario_columnas_categoricas = {
-        "HeartDisease": "Heart Disease",
-        "Smoking": "Smoking",
-        "AlcoholDrinking": "Alcohol Drinking",
-        "Stroke": "Stroke",
-        "DiffWalking": "DiffWalking",
-        "Sex":"Sex",
-        "AgeCategory": "Age Category",
-        "Race": "Race",
-        "Diabetic": "Diabetic",
-        "PhysicalActivity": "Physical Activity",
-        "GenHealth": "GenHealth",
-        "Asthma": "Asthma",
-        "KidneyDisease": "Kidney Disease",
-        "SkinCancer": "Skin Cancer"
-    
-    }
+    Inputs:
+    ======
 
+    dropdown_categoricas : String. Categorica elegida por el usuario y entregada por el callback.
+
+    Output:
+    ======
+
+    fig : plotly figure. Pie chart.
+    Diccionario con estilos css.
+    '''
     if dropdown_categoricas:
         
         proporcion = df[dropdown_categoricas].value_counts()/df[dropdown_categoricas].count()
@@ -1537,7 +1527,8 @@ def pie_chart_distribucion_categoricas_dropdown(dropdown_categoricas):
     else:
         return (go.Figure(data = [], layout = {}), {"display": "none"})
 
-# 3.A. CALLBACK DE HISTOGRAMAS PARA VER PORCENTAJE HEART DISEASE EN CATEGORICAS (Tercer grafico que se ve en el dash)
+
+# 2.A. CALLBACK DE GRAFICO DE BARRAS PARA VER PORCENTAJE DE HEART DISEASE SEGÚN CATEGORICAS
 
 @app.callback(
     Output("hist_porcentaje_heart_disease_categoricas", "figure"),
@@ -1546,6 +1537,20 @@ def pie_chart_distribucion_categoricas_dropdown(dropdown_categoricas):
 ) 
 
 def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart_disease_variables_categoricas):
+    '''
+    Función que representa el porcentaje de enfermos para cada una de las categorías de la variable elegida.
+
+    Inputs:
+    ======
+
+    dropdown_porcentaje_heart_disease_variables_categoricas : String. Categorica elegida por el usuario.
+
+    Output:
+    ======
+
+    fig : plotly figure. Bar graph.
+    Diccionario con estilos css.
+    '''
     if dropdown_porcentaje_heart_disease_variables_categoricas:
         
         totals_per_col = df[dropdown_porcentaje_heart_disease_variables_categoricas].value_counts()
@@ -1586,8 +1591,63 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
         return (go.Figure(data = [], layout = {}), {"display": "none"})
 
 
+## 2.B CALLBACK DE GRAFICO DE BARRAS PARA VER VALOR ABSOLUTO DE HEART DISEASE SEGÚN CATEGORICAS
+@app.callback(
+    Output("hist_total_heart_disease_categoricas", "figure"),
+    Output("hist_total_heart_disease_categoricas", "style"),
+    Input("dropdown_porcentaje_heart_disease_variables_categoricas", "value")
+) 
 
-# 2.A CALLBACK DE RADIO BUTTON HISTOGRAMAS PARA VER DISTRIBUCION DE NUMERICAS EN GENERAL Y YES/NO HEART DISEASE 
+def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart_disease_variables_categoricas):
+    '''
+    Función que representa el conteo de enfermos y no enfermos para cada una de las categorías de la variable elegida.
+
+    Inputs:
+    ======
+
+    dropdown_porcentaje_heart_disease_variables_categoricas : String. Categorica elegida por el usuario.
+
+    Output:
+    ======
+
+    fig : plotly figure. Estrictamente hablando es un histograma pero realmente imita a un bar graph.
+    Diccionario con estilos css.
+    '''
+    if dropdown_porcentaje_heart_disease_variables_categoricas:
+        
+        data = [
+            go.Histogram(
+                x = df[df["HeartDisease"] == 'Yes'][dropdown_porcentaje_heart_disease_variables_categoricas],
+                marker_color = "red",  # darkorange
+                opacity = 0.75,
+                name = "Heart Disease"
+            ),
+            go.Histogram(
+                x = df[df["HeartDisease"] == 'No'][dropdown_porcentaje_heart_disease_variables_categoricas],
+                marker_color = "blue",  # mediumseagreen
+                opacity = 0.75,
+                name = "No Heart Disease"
+            )
+        ]
+        layout = go.Layout(title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], xaxis_title =diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], yaxis_title = "Count")  # yaxis_title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas]
+
+        fig = go.Figure(data = data, layout = layout)
+        fig.update_layout(width=500)
+        fig.update_layout(height=330)
+
+        fig.update_layout(
+            font=dict(
+                family="Verdana",
+                size=11,  # Set the font size here
+            )
+        )
+        
+        return (fig,{"display":"inline-block"})
+    else:
+        return (go.Figure(data = [], layout = {}), {"display": "none"})
+
+
+# 3.A CALLBACK DE RADIO BUTTON HISTOGRAMAS PARA VER DISTRIBUCION DE NUMERICAS EN GENERAL Y YES/NO HEART DISEASE 
 @app.callback(
     Output("histograma_distribucion_numericas_general_yes_no", "figure"),
     Output("histograma_distribucion_numericas_general_yes_no", "style"),
@@ -1597,14 +1657,22 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
 )
 
 def histograma_distribucion_numericas_dropdown_yes_no(dropdown_numericas,slider_histograma_numericas, radio_item_dist_var_numerica_selector_general_yes_no):
-    
-    diccionario_variables_numericas = {
-        "BMI":"Body Mass Index",
-        "MentalHealth":"Mental Health",
-        "PhysicalHealth":"Physical Health",
-        "SleepTime":"Sleep Time"
-    }
+    '''
+    Función que representa a través de un histograma la distribución de las variables numéricas.
 
+    Inputs:
+    ======
+
+    dropdown_numericas : String. Numerica elegida.
+    slider_histograma_numericas : int. Tamaño de bins en el histograma, elegidos usando el slider.
+    radio_item_dist_var_numerica_selector_general_yes_no : String. Determina si se representa la distribución global, para enfermos solo o para no enfermos solo.
+
+    Output:
+    ======
+
+    fig : plotly figure. Histograma.
+    Diccionario con estilos css.
+    '''
     if dropdown_numericas and radio_item_dist_var_numerica_selector_general_yes_no=="Distribución General":
         data = [
         go.Histogram(
@@ -1691,62 +1759,34 @@ def histograma_distribucion_numericas_dropdown_yes_no(dropdown_numericas,slider_
         return (go.Figure(data = [], layout = {}), {"display": "none"})
 
 
-## SEGUNDA GRAFICA TOTAL HEART DISEASE SEGUN CATEGORICAL
-@app.callback(
-    Output("hist_total_heart_disease_categoricas", "figure"),
-    Output("hist_total_heart_disease_categoricas", "style"),
-    Input("dropdown_porcentaje_heart_disease_variables_categoricas", "value")
-) 
-
-def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart_disease_variables_categoricas):
-
-    if dropdown_porcentaje_heart_disease_variables_categoricas:
-        
-        data = [
-            go.Histogram(
-                x = df[df["HeartDisease"] == 'Yes'][dropdown_porcentaje_heart_disease_variables_categoricas],
-                marker_color = "red",  # darkorange
-                opacity = 0.75,
-                name = "Heart Disease"
-            ),
-            go.Histogram(
-                x = df[df["HeartDisease"] == 'No'][dropdown_porcentaje_heart_disease_variables_categoricas],
-                marker_color = "blue",  # mediumseagreen
-                opacity = 0.75,
-                name = "No Heart Disease"
-            )
-        ]
-        layout = go.Layout(title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], xaxis_title =diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], yaxis_title = "Count")  # yaxis_title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas]
-
-        fig = go.Figure(data = data, layout = layout)
-        fig.update_layout(width=500)
-        fig.update_layout(height=330)
-
-        fig.update_layout(
-            font=dict(
-                family="Verdana",
-                size=11,  # Set the font size here
-            )
-        )
-        
-        return (fig,{"display":"inline-block"})
-    else:
-        return (go.Figure(data = [], layout = {}), {"display": "none"})
-
-
-# 4.A. CALLBACK DE BOXPLOT PARA VER COMPARACION HEART DISEASE SEGUN VARIABLE CATEGORICA Y NUMERICA (Cuarto grafico que se ve en el dash)
-
+# 4.A. CALLBACK DE BOXPLOT PARA VER COMPARACION HEART DISEASE SEGUN VARIABLE CATEGORICA Y NUMERICA: BOX PLOT
 @app.callback(
     Output("comparacion_boxplot_heart_disease_segun_var_cat_y_num", "figure"),
     Output("comparacion_boxplot_heart_disease_segun_var_cat_y_num", "style"),
     Input("dropdown_cat_comparacion_categorica_numerica", "value"),
     Input("dropdown_num_comparacion_categorica_numerica", "value"),
     Input("radio_item_box_violin_selector", "value")
-) 
-
+)
 
 def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_cat_comparacion_categorica_numerica,dropdown_num_comparacion_categorica_numerica,radio_item_box_violin_selector):
+    '''
+    Función que representa mediante box plot la distribución de una variable numérica elegida por el usuario para cada
+    categoría de una variable categórica también elegida por el usuario, separando enfermos y no enfermos en dos box
+    plot distintos por categoría, uno coloreado de azul (no enfermos) y otro de rojo (enfermos)
 
+    Inputs:
+    ======
+
+    dropdown_cat_comparacion_categorica_numerica : String. Categórica elegida.
+    dropdown_num_comparacion_categorica_numerica: String. Numérica elegida.
+    radio_item_box_violin_selector : String. Determina si se representa como box plot o violin plot
+
+    Output:
+    ======
+
+    fig : plotly figure. Box plot.
+    Diccionario con estilos css.
+    '''
     if dropdown_cat_comparacion_categorica_numerica and dropdown_num_comparacion_categorica_numerica and (radio_item_box_violin_selector=="Box Plot"):
         
         fig = px.box(df, y=dropdown_cat_comparacion_categorica_numerica, x=dropdown_num_comparacion_categorica_numerica, color="HeartDisease",title="Heart Disease distribution by" + diccionario_variables_numericas[dropdown_num_comparacion_categorica_numerica] + "and" + diccionario_columnas_categoricas[dropdown_cat_comparacion_categorica_numerica])
@@ -1763,7 +1803,7 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
 
 
 
-## VIOLIN PLOT
+## 4.B. CALLBACK DE BOXPLOT PARA VER COMPARACION HEART DISEASE SEGUN VARIABLE CATEGORICA Y NUMERICA: VIOLIN PLOT
 @app.callback(
     Output("comparacion_violinplot_heart_disease_segun_var_cat_y_num", "figure"),
     Output("comparacion_violinplot_heart_disease_segun_var_cat_y_num", "style"),
@@ -1772,9 +1812,25 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
     Input("radio_item_box_violin_selector", "value")
 )
 
-
 def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_cat_comparacion_categorica_numerica,dropdown_num_comparacion_categorica_numerica,radio_item_box_violin_selector):
+    '''
+    Función que representa mediante violin plot la distribución de una variable numérica elegida por el usuario para cada
+    categoría de una variable categórica también elegida por el usuario, separando enfermos y no enfermos en dos box
+    plot distintos por categoría, uno coloreado de azul (no enfermos) y otro de rojo (enfermos)
 
+    Inputs:
+    ======
+
+    dropdown_cat_comparacion_categorica_numerica : String. Categórica elegida.
+    dropdown_num_comparacion_categorica_numerica: String. Numérica elegida.
+    radio_item_box_violin_selector : String. Determina si se representa como box plot o violin plot
+
+    Output:
+    ======
+
+    fig : plotly figure. Violin plot.
+    Diccionario con estilos css.
+    '''
     if dropdown_cat_comparacion_categorica_numerica and dropdown_num_comparacion_categorica_numerica and (radio_item_box_violin_selector=="Violin Plot"):
         
         fig = go.Figure()
@@ -1814,16 +1870,22 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
 )
 
 def scatter_plot_correlacion_numerica_numerica(dropdown_1_scatter_correlacion_numerica_numerica,dropdown_2_scatter_correlacion_numerica_numerica):
-    
-    
-    diccionario_variables_numericas = {
-        "BMI":"Body Mass Index",
-        "MentalHealth":"Mental Health",
-        "PhysicalHealth":"Physical Health",
-        "SleepTime":"Sleep Time"
-    }
+    '''
+    Función que representa un scatter plot entre dos variables numéricas elegidas por el usuario. Colorea los puntos en
+    función de si pertenencen a la clase enfermos (rojo) o a la de no enfermos (azul).
 
+    Inputs:
+    ======
 
+    dropdown_1_scatter_correlacion_numerica_numerica : String. Primera numérica elegida.
+    dropdown_2_scatter_correlacion_numerica_numerica: String. Segunda numérica elegida.
+
+    Output:
+    ======
+
+    fig : plotly figure. Scatter plot.
+    Diccionario con estilos css.
+    '''
     if dropdown_1_scatter_correlacion_numerica_numerica and dropdown_2_scatter_correlacion_numerica_numerica:
         fig = px.scatter(df, x=dropdown_1_scatter_correlacion_numerica_numerica, y=dropdown_2_scatter_correlacion_numerica_numerica, color="HeartDisease",
         title="Correlation between " + diccionario_variables_numericas[dropdown_1_scatter_correlacion_numerica_numerica] + "and " + diccionario_variables_numericas[dropdown_2_scatter_correlacion_numerica_numerica])
@@ -1838,7 +1900,8 @@ def scatter_plot_correlacion_numerica_numerica(dropdown_1_scatter_correlacion_nu
     else:
         return (go.Figure(data = [], layout = {}), {"display": "none"})
 
-## CALLBACK BOTON
+## 6.A CALLBACK PARA LEER LOS DATOS INTRODUCIDOS POR EL USUARIO CUANDO ESTE PULSE EL BOTON Y MOSTRAR EN TEXTO 
+## LA PROBABILIDAD ESTIMADA 
 @app.callback(
     Output('div_prediccion', 'children'),
     Input('button', 'n_clicks'),
@@ -1864,12 +1927,36 @@ def scatter_plot_correlacion_numerica_numerica(dropdown_1_scatter_correlacion_nu
 def update_div_prediccion(n_clicks,smoking_value, alcohol_value, stroke_value, diffwalking_value, 
     sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
     kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value):
+    '''
+    Función que devuelve un String con la probabilidad de padecer una enfermedad cardiaca, actualizando el texto cada
+    vez que el usuario pulsa al botón de 'realizar predicción'.
+
+    Inputs:
+    ======
+
+    n_clicks : int. Solo sirve para que el callback actualice los datos cada vez que el usuario pulsa el botón
+
+    smoking_value, alcohol_value, stroke_value, 
+    diffwalking_value, sex_value, age_value, 
+    race_value, diabetic_value, genhealth_value,
+    asthma_value, kidneydisease_value, skincancer_value 
+    physicalactivity_value                              : String. Clases elegidas desde el dash para cada una de las categóricas
+
+    bmi_value, sleeptime_value : float. Valor de BMI y duración media del sueño en horas
+    
+    mentalhealth_value, physicalhealth_value : int. Salud mental y física.
+
+    Output:
+    ======
+
+    String indicando la probabilidad de padecer una enfermedad cardiaca.
+    '''
     return 'Probability of having heart disease: {}%'.format(round(realizar_prediccion(df.columns,smoking_value, alcohol_value,
             stroke_value, diffwalking_value, sex_value, age_value, race_value, diabetic_value, physicalactivity_value, 
             genhealth_value, asthma_value, kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, 
             mentalhealth_value, physicalhealth_value)*100,2))
 
-## CALLBACK BOTON para el bullet chart
+## 6.B CALLBACK PARA LEER LOS DATOS INTRODUCIDOS Y REPRESENTAR LA PROBABILIDAD ESTIMADA USANDO UN BULLET GRAPH
 @app.callback(
     Output('bullet_chart_probability', 'figure'),
     Output("bullet_chart_probability", "style"),
@@ -1896,7 +1983,31 @@ def update_div_prediccion(n_clicks,smoking_value, alcohol_value, stroke_value, d
 def update_bullet_chart_prediccion(n_clicks,smoking_value, alcohol_value, stroke_value, diffwalking_value, 
     sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
     kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value):
+    '''
+    Función que devuelve un bullet chart representando la probabilidad de padecer una enfermedad cardiaca, actualizando 
+    dicha figura en el dash cada vez que el usuario pulsa al botón de 'realizar predicción'.
 
+    Inputs:
+    ======
+
+    n_clicks : int. Solo sirve para que el callback actualice los datos cada vez que el usuario pulsa el botón
+
+    smoking_value, alcohol_value, stroke_value, 
+    diffwalking_value, sex_value, age_value, 
+    race_value, diabetic_value, genhealth_value,
+    asthma_value, kidneydisease_value, skincancer_value 
+    physicalactivity_value                              : String. Clases elegidas desde el dash para cada una de las categóricas
+
+    bmi_value, sleeptime_value : float. Valor de BMI y duración media del sueño en horas
+    
+    mentalhealth_value, physicalhealth_value : int. Salud mental y física.
+
+    Output:
+    ======
+
+    fig : plotly figure. Bullet chart.
+    Diccionario con estilos css.
+    '''
     pred = realizar_prediccion(df.columns,smoking_value, alcohol_value, stroke_value, diffwalking_value, 
             sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
             kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value)

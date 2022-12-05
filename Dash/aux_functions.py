@@ -7,10 +7,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import logging
-from plotly.subplots import make_subplots
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import OrdinalEncoder
-import dash_daq as daq
 from plotly.graph_objects import Layout
 import dash_daq as daq
 import pickle as pk
