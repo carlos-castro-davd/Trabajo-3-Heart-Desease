@@ -17,6 +17,7 @@ import dash_daq as daq
 from plotly.graph_objects import Layout
 import dash_daq as daq
 import pickle as pk
+from aux_functions import *
 
 
 # Para este Dash, vamos a seleccionar un fichero de datos y realizar un dashboard descriptivo
@@ -26,172 +27,28 @@ df = pd.read_csv('../Datos/heart_2020_cleaned.csv')
 df['Race'] = df['Race'].map({'American Indian/Alaskan Native': 'Native American',
                              'White':'White', 'Black':'Black','Asian':'Asian','Hispanic':'Hispanic','Other':'Other'})
 
-def plot_correlation_matrix_numericals():
-    df_numerical = df[['BMI','PhysicalHealth','MentalHealth', 'SleepTime']]
-    # Compute the correlations
-    corr_matrix = df.corr()
-
-    # Generate the heatmap
-    fig = px.imshow(corr_matrix, color_continuous_scale='Viridis')  # color_continuous_scale=["yellow", "red"]
-    fig.update_layout(title="Correlation Matrix")
-    fig.update_layout(height=500,width=400)
-
-    return fig
-
-
-# 6.A FUNCION RADAR CHART
-def radar_chart():
-    scaler = MinMaxScaler()
-    numerical = df.loc[:, ["BMI","PhysicalHealth","MentalHealth", "SleepTime", "HeartDisease","AgeCategory", "Smoking", "KidneyDisease", "Stroke", "SkinCancer", "PhysicalActivity", "GenHealth"]]
-    genhealth_mapping = {"Excellent":4,"Very good":3,"Good":2,"Fair":1,"Poor":0}
-    agecategory_mapping = {"18-24":0,"25-29":1,"30-34":2,"35-39":3,"40-44":4,"45-49":5,"50-54":6,"55-59":7,
-                            "60-64":8,"65-69":9,"70-74":10,"75-79":11,"80 or older":12}
-
-    numerical['GenHealth']= numerical['GenHealth'].map(genhealth_mapping)
-    numerical['AgeCategory']= numerical['AgeCategory'].map(agecategory_mapping)
-
-
-    encoder = OrdinalEncoder()
-    result = encoder.fit_transform(numerical.drop(['HeartDisease'], axis=1))
-    numerical = pd.DataFrame(result, columns = numerical.drop(['HeartDisease'], axis=1).columns)
-    scaler.fit(numerical)
-    numerical_scaled = scaler.transform(numerical)
-    numerical_scaled = pd.DataFrame(numerical_scaled, columns = numerical.columns)
-    numerical_scaled["HeartDisease"] = df["HeartDisease"]
-    numerical_yes_HeartDisease = numerical_scaled[numerical_scaled['HeartDisease'] == 'Yes' ] #rojo
-    numerical_no_HeartDisease = numerical_scaled[numerical_scaled['HeartDisease'] == 'No' ]
-    categories = ['BMI','PhysicalHealth','MentalHealth',
-            'AgeCategory', 'Smoking', 'KidneyDisease', 'Stroke', 'SkinCancer','PhysicalActivity', 'GenHealth']
-
-    fig = go.Figure()
-
-    fig.add_trace(go.Scatterpolar(
-          r=[numerical_no_HeartDisease['BMI'].mean(),numerical_no_HeartDisease['PhysicalHealth'].mean(), 
-             numerical_no_HeartDisease['MentalHealth'].mean(), 
-             numerical_no_HeartDisease['AgeCategory'].mean(), numerical_no_HeartDisease['Smoking'].mean(),
-            numerical_no_HeartDisease['KidneyDisease'].mean(), numerical_no_HeartDisease['Stroke'].mean(),
-            numerical_no_HeartDisease['SkinCancer'].mean(), numerical_no_HeartDisease['PhysicalActivity'].mean(),
-            numerical_no_HeartDisease['GenHealth'].mean()],
-          theta=categories,
-          fill='toself',
-          name='No Heart Disease',marker=dict(color="blue")
-    ))
-    fig.add_trace(go.Scatterpolar(
-          r=[numerical_yes_HeartDisease['BMI'].mean(),numerical_yes_HeartDisease['PhysicalHealth'].mean(), 
-             numerical_yes_HeartDisease['MentalHealth'].mean(),
-            numerical_yes_HeartDisease['AgeCategory'].mean(), numerical_yes_HeartDisease['Smoking'].mean(),
-            numerical_yes_HeartDisease['KidneyDisease'].mean(), numerical_yes_HeartDisease['Stroke'].mean(),
-            numerical_yes_HeartDisease['SkinCancer'].mean(), numerical_yes_HeartDisease['PhysicalActivity'].mean(),
-            numerical_yes_HeartDisease['GenHealth'].mean()],
-          theta=categories, 
-          fill='toself',
-          name='Yes Heart Disease',marker=dict(color="red")
-    ))
-
-    fig.update_layout(
-      polar=dict(
-        radialaxis=dict(
-          visible=True,
-          range=[0, 1]
-        )),
-      showlegend=False
-    ),
-
-    fig.update_layout(title="Radar chart", width=550,height=550)
-
-    return fig
-
-#  FUNCION BULLET CHART PROBABILITY
-def bullet_chart_heartdisease_probability(probability):
-    fig = go.Figure(go.Indicator(
-    mode = "number+gauge", value = probability, number_font_color="black", 
-    number = {"suffix": "%"},
-    domain = {'x': [0, 1], 'y': [0, 1]},
-    delta = {'reference': 50, 'position': "top", 'valueformat':'.2%'},
-    title = {'text':"<b>Prob %</b><br><span style='color: gray; font-size:0.8em'></span>", 'font': {"size": 14}},
-    gauge = {
-        'shape': "bullet",
-        'axis': {'range': [None, 100]},
-        'threshold': {
-            'line': {'color': "red", 'width': 2},
-            'thickness': 0.75, 'value': 270},
-        'bgcolor': "white",
-        'steps': [
-            {'range': [0, 50], 'color': "lightskyblue"},
-            {'range': [50, 100], 'color': "orangered"}],
-        'bar': {'color': "black"}}))
-    fig.update_layout(height = 250, width=1000)
-    
-    return fig
-
-# FUNCION PARA LEER EL MODELO Y REALIZAR LAS PREDICCIONES
-def realizar_prediccion(smoking_value, alcohol_value, stroke_value, diffwalking_value, 
-    sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
-    kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value):
-    prob = 0
-
-    # Leer los modelos
-    cluster = pk.load(open('../Modelo/cluster.plk', 'rb'))
-    scaler = pk.load(open('../Modelo/scaler.plk', 'rb'))
-    modelo_heart_disease = pk.load(open('../Modelo/modelo_heart_disease.plk', 'rb'))
-
-    new_obs = pd.DataFrame([[bmi_value, smoking_value, alcohol_value, stroke_value, physicalhealth_value,
-                            mentalhealth_value, diffwalking_value, sex_value, age_value, race_value, 
-                            diabetic_value, physicalactivity_value, genhealth_value, sleeptime_value,
-                            asthma_value, kidneydisease_value, skincancer_value]], index=[0],
-                           columns=df.columns.drop('HeartDisease'))
-    
-    genhealth_mapping = {"Excellent":4,"Very good":3,"Good":2,"Fair":1,"Poor":0}
-    agecategory_mapping = {"18-24":0,"25-29":1,"30-34":2,"35-39":3,"40-44":4,"45-49":5,"50-54":6,"55-59":7,
-                           "60-64":8,"65-69":9,"70-74":10,"75-79":11,"80 or older":12}
-    new_obs['GenHealth']= new_obs['GenHealth'].map(genhealth_mapping)
-    new_obs['AgeCategory']= new_obs['AgeCategory'].map(agecategory_mapping)
-    # new_obs = pd.get_dummies(new_obs, drop_first=True)
-    obs_encoded = pd.DataFrame([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]], index=[0],
-                               columns = ['BMI', 'PhysicalHealth', 'MentalHealth', 'AgeCategory', 'GenHealth',
-                                          'SleepTime', 'Smoking_Yes', 'AlcoholDrinking_Yes',
-                                          'Stroke_Yes', 'DiffWalking_Yes', 'Sex_Male', 'Race_Asian', 'Race_Black',
-                                          'Race_Hispanic', 'Race_Other', 'Race_White',
-                                          'Diabetic_No, borderline diabetes', 'Diabetic_Yes',
-                                          'Diabetic_Yes (during pregnancy)', 'PhysicalActivity_Yes', 'Asthma_Yes',
-                                          'KidneyDisease_Yes', 'SkinCancer_Yes'])
-    obs_encoded['SleepTime']=new_obs['SleepTime']
-    obs_encoded['PhysicalHealth']=new_obs['PhysicalHealth']
-    obs_encoded['MentalHealth']=new_obs['MentalHealth']
-    obs_encoded['GenHealth'] = new_obs['GenHealth']
-    obs_encoded['AgeCategory'] = new_obs['AgeCategory']
-    obs_encoded['Smoking_Yes'] = [1 if smoking_value=='Yes' else 0]
-    obs_encoded['AlcoholDrinking_Yes'] = [1 if alcohol_value=='Yes' else 0]
-    obs_encoded['Stroke_Yes'] = [1 if stroke_value=='Yes' else 0]
-    obs_encoded['DiffWalking_Yes'] = [1 if diffwalking_value=='Yes' else 0]
-    obs_encoded['Sex_Male'] = [1 if sex_value=='Male' else 0]
-    obs_encoded['Race_Black'] = [1 if race_value=='Black' else 0]
-    obs_encoded['Race_Hispanic'] = [1 if race_value=='Hispanic' else 0]
-    obs_encoded['Race_Other'] = [1 if race_value=='Other' else 0]
-    obs_encoded['Race_White'] = [1 if race_value=='White' else 0]
-    obs_encoded['Diabetic_No, borderline diabetes'] = [1 if diabetic_value=='No, borderline diabetes' else 0]
-    obs_encoded['Diabetic_Yes'] = [1 if diabetic_value=='Yes' else 0]
-    obs_encoded['Asthma_Yes'] = [1 if asthma_value=='Yes' else 0]
-    obs_encoded['KidneyDisease_Yes'] = [1 if kidneydisease_value=='Yes' else 0]
-    obs_encoded['SkinCancer_Yes'] = [1 if skincancer_value=='Yes' else 0]
-    
-    # Variables que se eliminaran pero que hay que poner antes del scaler para que no de error
-    obs_encoded['BMI']=0
-    obs_encoded['Diabetic_Yes (during pregnancy)']=0
-    obs_encoded['PhysicalActivity_Yes']=0
-    obs_encoded['Race_Asian']=0
-    
-    
-    obs_encoded_scaled = pd.DataFrame(scaler.transform(obs_encoded), columns=obs_encoded.columns)
-    
-    obs_encoded_scaled = obs_encoded_scaled.drop(['BMI','Diabetic_Yes (during pregnancy)','PhysicalActivity_Yes','Race_Asian'],axis=1)
-    
-    obs_encoded_scaled['cluster'] = cluster.predict(obs_encoded_scaled)
-    
-    probability = modelo_heart_disease.predict_proba(obs_encoded_scaled)
-    #prediction = modelo_heart_disease.predict(obs_encoded_scaled)
-    
-    return probability[0][1]
+diccionario_columnas_categoricas = {
+    "HeartDisease": "Heart Disease",
+    "Smoking": "Smoking",
+    "AlcoholDrinking": "Alcohol Drinking",
+    "Stroke": "Stroke",
+    "DiffWalking": "DiffWalking",
+    "Sex":"Sex",
+    "AgeCategory": "Age Category",
+    "Race": "Race",
+    "Diabetic": "Diabetic",
+    "PhysicalActivity": "Physical Activity",
+    "GenHealth": "GenHealth",
+    "Asthma": "Asthma",
+    "KidneyDisease": "Kidney Disease",
+    "SkinCancer": "Skin Cancer"
+}
+diccionario_variables_numericas = {
+    "BMI":"Body Mass Index",
+    "MentalHealth":"Mental Health",
+    "PhysicalHealth":"Physical Health",
+    "SleepTime":"Sleep Time"
+}
 
 dropdown_modelo_yes_no = [{'value': "Yes", 'label':"Yes"}, {'value': "No", 'label':"No"}]
 dropdpown_modelo_sex = [{'value': "Male", 'label':"Male"}, {'value': "Female", 'label':"Female"}]
@@ -709,7 +566,7 @@ app.layout = html.Div(
                         ),
                         dcc.Graph(
                             id = "plot_matriz_correlacion",
-                            figure=plot_correlation_matrix_numericals(),
+                            figure=plot_correlation_matrix_numericals(df),
                             style = {
                                 #"display": "none"
                             }
@@ -834,7 +691,7 @@ app.layout = html.Div(
                         html.Div(
                             children = [
                                 dcc.Graph(
-                                    figure=radar_chart(),
+                                    figure=radar_chart(df),
                                     id = "titulo_radar_chart",
                                     style = {
                                         "display": "inline-block",
@@ -1689,26 +1546,6 @@ def pie_chart_distribucion_categoricas_dropdown(dropdown_categoricas):
 ) 
 
 def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart_disease_variables_categoricas):
-
-    diccionario_columnas_categoricas = {
-        "HeartDisease": "Heart Disease",
-        "Smoking": "Smoking",
-        "AlcoholDrinking": "Alcohol Drinking",
-        "Stroke": "Stroke",
-        "DiffWalking": "DiffWalking",
-        "Sex":"Sex",
-        "AgeCategory": "Age Category",
-        "Race": "Race",
-        "Diabetic": "Diabetic",
-        "PhysicalActivity": "Physical Activity",
-        "GenHealth": "GenHealth",
-        "Asthma": "Asthma",
-        "KidneyDisease": "Kidney Disease",
-        "SkinCancer": "Skin Cancer"
-    
-    }
-    
-
     if dropdown_porcentaje_heart_disease_variables_categoricas:
         
         totals_per_col = df[dropdown_porcentaje_heart_disease_variables_categoricas].value_counts()
@@ -1863,25 +1700,6 @@ def histograma_distribucion_numericas_dropdown_yes_no(dropdown_numericas,slider_
 
 def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart_disease_variables_categoricas):
 
-    diccionario_columnas_categoricas = {
-        "HeartDisease": "Heart Disease",
-        "Smoking": "Smoking",
-        "AlcoholDrinking": "Alcohol Drinking",
-        "Stroke": "Stroke",
-        "DiffWalking": "DiffWalking",
-        "Sex":"Sex",
-        "AgeCategory": "Age Category",
-        "Race": "Race",
-        "Diabetic": "Diabetic",
-        "PhysicalActivity": "Physical Activity",
-        "GenHealth": "GenHealth",
-        "Asthma": "Asthma",
-        "KidneyDisease": "Kidney Disease",
-        "SkinCancer": "Skin Cancer"
-    
-    }
-    
-
     if dropdown_porcentaje_heart_disease_variables_categoricas:
         
         data = [
@@ -1928,31 +1746,6 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
 
 
 def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_cat_comparacion_categorica_numerica,dropdown_num_comparacion_categorica_numerica,radio_item_box_violin_selector):
-    
-    diccionario_columnas_categoricas = {
-        "HeartDisease": "Heart Disease",
-        "Smoking": "Smoking",
-        "AlcoholDrinking": "Alcohol Drinking",
-        "Stroke": "Stroke",
-        "DiffWalking": "DiffWalking",
-        "Sex":"Sex",
-        "AgeCategory": "Age Category",
-        "Race": "Race",
-        "Diabetic": "Diabetic",
-        "PhysicalActivity": "Physical Activity",
-        "GenHealth": "GenHealth",
-        "Asthma": "Asthma",
-        "KidneyDisease": "Kidney Disease",
-        "SkinCancer": "Skin Cancer"
-    
-    }
-    diccionario_variables_numericas = {
-        "BMI":"Body Mass Index",
-        "MentalHealth":"Mental Health",
-        "PhysicalHealth":"Physical Health",
-        "SleepTime":"Sleep Time"
-    }
-
 
     if dropdown_cat_comparacion_categorica_numerica and dropdown_num_comparacion_categorica_numerica and (radio_item_box_violin_selector=="Box Plot"):
         
@@ -1981,31 +1774,6 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
 
 
 def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_cat_comparacion_categorica_numerica,dropdown_num_comparacion_categorica_numerica,radio_item_box_violin_selector):
-    
-    diccionario_columnas_categoricas = {
-        "HeartDisease": "Heart Disease",
-        "Smoking": "Smoking",
-        "AlcoholDrinking": "Alcohol Drinking",
-        "Stroke": "Stroke",
-        "DiffWalking": "DiffWalking",
-        "Sex":"Sex",
-        "AgeCategory": "Age Category",
-        "Race": "Race",
-        "Diabetic": "Diabetic",
-        "PhysicalActivity": "Physical Activity",
-        "GenHealth": "GenHealth",
-        "Asthma": "Asthma",
-        "KidneyDisease": "Kidney Disease",
-        "SkinCancer": "Skin Cancer"
-    
-    }
-    diccionario_variables_numericas = {
-        "BMI":"Body Mass Index",
-        "MentalHealth":"Mental Health",
-        "PhysicalHealth":"Physical Health",
-        "SleepTime":"Sleep Time"
-    }
-
 
     if dropdown_cat_comparacion_categorica_numerica and dropdown_num_comparacion_categorica_numerica and (radio_item_box_violin_selector=="Violin Plot"):
         
@@ -2096,9 +1864,10 @@ def scatter_plot_correlacion_numerica_numerica(dropdown_1_scatter_correlacion_nu
 def update_div_prediccion(n_clicks,smoking_value, alcohol_value, stroke_value, diffwalking_value, 
     sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
     kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value):
-    return 'Probability of having heart disease: {}%'.format(round(realizar_prediccion(smoking_value, alcohol_value, stroke_value, diffwalking_value, 
-            sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
-            kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value)*100,2))
+    return 'Probability of having heart disease: {}%'.format(round(realizar_prediccion(df.columns,smoking_value, alcohol_value,
+            stroke_value, diffwalking_value, sex_value, age_value, race_value, diabetic_value, physicalactivity_value, 
+            genhealth_value, asthma_value, kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, 
+            mentalhealth_value, physicalhealth_value)*100,2))
 
 ## CALLBACK BOTON para el bullet chart
 @app.callback(
@@ -2128,7 +1897,7 @@ def update_bullet_chart_prediccion(n_clicks,smoking_value, alcohol_value, stroke
     sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
     kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value):
 
-    pred = realizar_prediccion(smoking_value, alcohol_value, stroke_value, diffwalking_value, 
+    pred = realizar_prediccion(df.columns,smoking_value, alcohol_value, stroke_value, diffwalking_value, 
             sex_value, age_value, race_value, diabetic_value, physicalactivity_value, genhealth_value, asthma_value,
             kidneydisease_value, skincancer_value, bmi_value, sleeptime_value, mentalhealth_value, physicalhealth_value)
     fig = bullet_chart_heartdisease_probability(pred*100)
