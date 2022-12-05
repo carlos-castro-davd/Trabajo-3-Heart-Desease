@@ -304,23 +304,19 @@ app.layout = html.Div(
                                 "margin-left": "10px"
                             }
                         ),
-                dcc.Graph(
-                            id = "dropdown_histograma_distribucion_numericas",
-                            style = {
-                                "display": "none"
-                            }
-                        ),
+                
                 # Radio item para elegir distribución de las variables cuantitativas entre los que tienen Heart Disease y los que no tienen 
                 dcc.RadioItems(
-                    id="radio_item_dist_var_numerica_selector_yes_no",
+                    id="radio_item_dist_var_numerica_selector_general_yes_no",
                     options=[
-                        {'label': '                     Distribución YES Heart Disease                                   ', 'value': 'Distribución YES Heart Disease'},
-                        {'label': '                     Distribución NO Heart Disease', 'value': 'Distribución NO Heart Disease'}
+                        {'label': '                     Distribución General                                   ', 'value': 'Distribución General'},
+                        {'label': '                     Distribución enfermos                                   ', 'value': 'Distribución YES Heart Disease'},
+                        {'label': '                     Distribución no enfermos', 'value': 'Distribución NO Heart Disease'}
                     ],
                     value='Distribución YES Heart Disease', style={"margin-top":"25px", "margin-left":"10px"}
                 ),
                 dcc.Graph(
-                            id = "histograma_distribucion_numericas_yes_no",
+                            id = "histograma_distribucion_numericas_general_yes_no",
                             style = {
                                 "display": "none"
                             }
@@ -1178,16 +1174,17 @@ def pie_chart_distribucion_categoricas_dropdown(dropdown_categoricas):
         return (go.Figure(data = [], layout = {}), {"display": "none"})
 
 
-# 2.A. CALLBACK DE HISTOGRAMAS PARA VER DISTRIBUCION DE NUMERICAS (Segundo grafico que se ve en el dash)
+ 
+ # 2.A CALLBACK DE RADIO BUTTON HISTOGRAMAS PARA VER DISTRIBUCION DE NUMERICAS EN GENERAL Y YES/NO HEART DISEASE 
 @app.callback(
-    Output("dropdown_histograma_distribucion_numericas", "figure"),
-    Output("dropdown_histograma_distribucion_numericas", "style"),
+    Output("histograma_distribucion_numericas_general_yes_no", "figure"),
+    Output("histograma_distribucion_numericas_general_yes_no", "style"),
     Input("dropdown_numericas", "value"),
-    Input("slider_histograma_numericas", "value")
-
+    Input("slider_histograma_numericas", "value"),
+    Input("radio_item_dist_var_numerica_selector_general_yes_no", "value")
 )
-        
-def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histograma_numericas):
+
+def histograma_distribucion_numericas_dropdown_yes_no(dropdown_numericas,slider_histograma_numericas, radio_item_dist_var_numerica_selector_general_yes_no):
     
     diccionario_variables_numericas = {
         "BMI":"Body Mass Index",
@@ -1196,8 +1193,7 @@ def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histogr
         "SleepTime":"Sleep Time"
     }
 
-    if dropdown_numericas:
-        
+    if dropdown_numericas and radio_item_dist_var_numerica_selector_general_yes_no=="Distribución General":
         data = [
         go.Histogram(
             x = df[dropdown_numericas],
@@ -1215,28 +1211,8 @@ def histograma_distribucion_numericas_dropdown(dropdown_numericas,slider_histogr
         fig = go.Figure(data = data, layout = layout)
         
         return (fig,{"display":"block"})
-    else:
-        return (go.Figure(data = [], layout = {}), {"display": "none"})
- 
- # 2.B CALLBACK DE RADIO BUTTON HISTOGRAMAS PARA VER DISTRIBUCION DE NUMERICAS EN LOS QUE TIENEN HEART DISEASE Y LOS QUE NO
-@app.callback(
-    Output("histograma_distribucion_numericas_yes_no", "figure"),
-    Output("histograma_distribucion_numericas_yes_no", "style"),
-    Input("dropdown_numericas", "value"),
-    Input("slider_histograma_numericas", "value"),
-    Input("radio_item_dist_var_numerica_selector_yes_no", "value")
-)
-
-def histograma_distribucion_numericas_dropdown_yes_no(dropdown_numericas,slider_histograma_numericas, radio_item_dist_var_numerica_selector_yes_no):
     
-    diccionario_variables_numericas = {
-        "BMI":"Body Mass Index",
-        "MentalHealth":"Mental Health",
-        "PhysicalHealth":"Physical Health",
-        "SleepTime":"Sleep Time"
-    }
-
-    if dropdown_numericas and radio_item_dist_var_numerica_selector_yes_no=="Distribución YES Heart Disease":
+    elif dropdown_numericas and radio_item_dist_var_numerica_selector_general_yes_no=="Distribución YES Heart Disease":
         
         df_yes_HeartDisease = df[df['HeartDisease'] == 'Yes' ]
         data = [
@@ -1256,7 +1232,7 @@ def histograma_distribucion_numericas_dropdown_yes_no(dropdown_numericas,slider_
         fig = go.Figure(data = data, layout = layout)
         
         return (fig,{"display":"block"})
-    elif dropdown_numericas and radio_item_dist_var_numerica_selector_yes_no=="Distribución NO Heart Disease":
+    elif dropdown_numericas and radio_item_dist_var_numerica_selector_general_yes_no=="Distribución NO Heart Disease":
         
         df_no_HeartDisease = df[df['HeartDisease'] == 'No' ]
         data = [
@@ -1319,7 +1295,7 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
         trace = go.Bar(x = df[dropdown_porcentaje_heart_disease_variables_categoricas].unique(),
                     y = y,
                     name = "HeartDisease",
-                    marker_color = "darkcian",  # firebrick mediumseagreen
+                    marker_color = "firebrick",  # firebrick mediumseagreen
                     text= ["{0}%".format(round(value*100,1)) for value in y],
                     textposition="auto",
                     opacity=0.8,
