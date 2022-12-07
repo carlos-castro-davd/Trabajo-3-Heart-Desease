@@ -42,7 +42,7 @@ def plot_correlation_matrix_numericals(df):
 
 def radar_chart(df):
     '''
-    Función para representar el radar chart para los perfines medios de persona enferma y persona no enferma. Computa el valor 
+    Función para representar el radar chart para los perfiles medios de persona enferma y persona no enferma. Computa el valor 
     medio de varias de las variables para cada uno de estos grupos (incluyendo algunas categoricas orginales convertidas a
     numéricas, así como algunas de las binarias (Yes/No) para obtener una visión general).
 

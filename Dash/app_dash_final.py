@@ -270,7 +270,7 @@ app.layout = html.Div(
 
                                 html.H3(
                                     children = [
-                                        "VARIABLES CATEGÓRICAS: DISTRIBUCIÓN"
+                                        "CATEGORICAL VARAIBLES: DISTRIBUTION"
                                     ],
                                     id = "distribucion_categoricas",
                                     style = {
@@ -344,7 +344,7 @@ app.layout = html.Div(
 
                         html.H3(
                             children = [
-                                "VARIABLES CATEGÓRICAS: PORCENTAJE DE HEART DISEASE"
+                                "CATEGORICAL VARIABLES: PERCENTAGE OF HEART DISEASE"
                             ],
                             id = "titulo_distribucion_target_en_categoricas",
                             style = {
@@ -451,7 +451,7 @@ app.layout = html.Div(
                     children=[
                         html.H3(
                             children = [
-                                "VARIABLES NUMÉRICAS: DISTRIBUCIÓN"
+                                "NUMERICAL VARIABLES: DISTRIBUTION"
                             ],
                             id = "distribucion_numericas",
                             style = {
@@ -485,9 +485,9 @@ app.layout = html.Div(
                                 dcc.RadioItems(
                                     id="radio_item_dist_var_numerica_selector_general_yes_no",
                                     options=[
-                                        {'label': '                     Distribución General                                   ', 'value': 'Distribución General'},
-                                        {'label': '                     Distribución enfermos                                   ', 'value': 'Distribución YES Heart Disease'},
-                                        {'label': '                     Distribución no enfermos', 'value': 'Distribución NO Heart Disease'}
+                                        {'label': '                     Overall distribution                                   ', 'value': 'Distribución General'},
+                                        {'label': '                     With heart disease                                   ', 'value': 'Distribución YES Heart Disease'},
+                                        {'label': '                     Without heart disease', 'value': 'Distribución NO Heart Disease'}
                                     ],
                                     value='Distribución YES Heart Disease', style={"margin-top":"25px", "margin-left":"10px"}
                                 ),
@@ -545,7 +545,7 @@ app.layout = html.Div(
                     children = [
                         html.H3(
                             children = [
-                                "MATRIZ DE CORRELACIÓN ENTRE VARIABLES NUMÉRICAS"
+                                "CORRELATION MATRIX FOR NUMERICAL VARIABLES"
                             ],
                             id = "titulo_matriz_correlacion",
                             style = {
@@ -595,7 +595,7 @@ app.layout = html.Div(
                     children=[
                         html.H3(
                             children = [
-                                "CORRELACIÓN ENTRE VARIABLES NUMÉRICAS"
+                                "CORRELATION BETWEEN NUMERICAL VARIABLES"
                             ],
                             id = "titulo_correlacion_entre_variables_numericas",
                             style = {
@@ -669,7 +669,7 @@ app.layout = html.Div(
                     children=[
                         html.H3(
                             children = [
-                                "PERFIL DE PERSONAS SANAS Y ENFERMAS"
+                                "PROFILE OF HEALTHY AND UNHEALTHY CLIENTS"
                             ],
                             id = "radar_chart_variables",
                             style = {
@@ -723,7 +723,7 @@ app.layout = html.Div(
             children=[
                 html.H3(
                     children = [
-                        "DISTRIBUCIÓN DE VARIABLES NUMERICAS PARA DISTINTAS CATEGORÍAS"
+                        "DISTRIBUTION OF NUMERICAL VARIABLES FOR DIFFERENT CATEGORIES"
                     ],
                     id = "comparacion_heart_disease_categorica_numerica",
                     style = {
@@ -815,7 +815,7 @@ app.layout = html.Div(
             children=[
                 html.H3(
                     children = [
-                        "REALIZAR PREDICCIONES"
+                        "HEART DISEASE PROBABILITY ESTIMATION"
                     ],
                     id = "titulo_modelo",
                     style = {
