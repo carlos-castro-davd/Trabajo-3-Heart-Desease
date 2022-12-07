@@ -1629,7 +1629,7 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
                 name = "No Heart Disease"
             )
         ]
-        layout = go.Layout(title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], xaxis_title =diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], yaxis_title = "Count")  # yaxis_title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas]
+        layout = go.Layout(title = "Heart Disease distribution by " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], xaxis_title =diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas], yaxis_title = "Count")  # yaxis_title = "Heart Disease según " + diccionario_columnas_categoricas[dropdown_porcentaje_heart_disease_variables_categoricas]
 
         fig = go.Figure(data = data, layout = layout)
         fig.update_layout(width=500)
@@ -1647,7 +1647,7 @@ def hist_porcentaje_heart_disease_categoricas_dropdown(dropdown_porcentaje_heart
         return (go.Figure(data = [], layout = {}), {"display": "none"})
 
 
-# 3.A CALLBACK DE RADIO BUTTON HISTOGRAMAS PARA VER DISTRIBUCION DE NUMERICAS EN GENERAL Y YES/NO HEART DISEASE 
+# 3.A CALLBACK DE RADIO BUTTON HISTOGRAMAS PARA VER DISTRIBUCION DE NUMERICAS EN GENERAL Y PARA YES/NO HEART DISEASE POR SEPARADO
 @app.callback(
     Output("histograma_distribucion_numericas_general_yes_no", "figure"),
     Output("histograma_distribucion_numericas_general_yes_no", "style"),
@@ -1789,7 +1789,7 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
     '''
     if dropdown_cat_comparacion_categorica_numerica and dropdown_num_comparacion_categorica_numerica and (radio_item_box_violin_selector=="Box Plot"):
         
-        fig = px.box(df, y=dropdown_cat_comparacion_categorica_numerica, x=dropdown_num_comparacion_categorica_numerica, color="HeartDisease",title="Heart Disease distribution by" + diccionario_variables_numericas[dropdown_num_comparacion_categorica_numerica] + "and" + diccionario_columnas_categoricas[dropdown_cat_comparacion_categorica_numerica])
+        fig = px.box(df, y=dropdown_cat_comparacion_categorica_numerica, x=dropdown_num_comparacion_categorica_numerica, color="HeartDisease",title="Heart Disease distribution by " + diccionario_variables_numericas[dropdown_num_comparacion_categorica_numerica] + " and " + diccionario_columnas_categoricas[dropdown_cat_comparacion_categorica_numerica])
         fig.update_traces(quartilemethod="exclusive") 
         fig.update_layout(
             font=dict(
@@ -1850,6 +1850,7 @@ def boxplot_comparacion_heart_disease_categorica_y_numerica_dropdown(dropdown_ca
         fig.update_traces(meanline_visible=True)
         fig.update_layout(violingap=0, violinmode='overlay')
         fig.update_layout(height=550)
+        fig.update_layout(title="Heart Disease distribution by " + diccionario_variables_numericas[dropdown_num_comparacion_categorica_numerica] + " and " + diccionario_columnas_categoricas[dropdown_cat_comparacion_categorica_numerica])
         fig.update_layout(
             font=dict(
                 family="Verdana",
